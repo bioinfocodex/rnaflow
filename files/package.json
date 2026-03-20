@@ -1,0 +1,111 @@
+{
+  "name": "rnaflow",
+  "productName": "RNAflow",
+  "version": "1.0.0",
+  "description": "Complete RNA-seq analysis pipeline — from raw FASTQ to publication figures",
+  "author": {
+    "name": "BioInfoCodex",
+    "email": "hello@bioinfocodex.com",
+    "url": "https://bioinfocodex.com"
+  },
+  "license": "MIT",
+  "homepage": "https://bioinfocodex.com",
+  "main": "main.js",
+  "scripts": {
+    "start":        "electron .",
+    "dev":          "NODE_ENV=development electron .",
+    "build:mac":    "electron-builder --mac",
+    "build:win":    "electron-builder --win",
+    "build:linux":  "electron-builder --linux",
+    "build:all":    "electron-builder --mac --win --linux",
+    "dist":         "electron-builder"
+  },
+  "devDependencies": {
+    "electron":         "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.bioinfocodex.rnaflow",
+    "productName": "RNAflow",
+    "copyright": "© 2025 BioInfoCodex",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "RNAflow_App.html",
+      "rnaflow_server.py",
+      "assets/**/*",
+      "!node_modules/.cache"
+    ],
+    "extraResources": [
+      {
+        "from": "rnaflow_server.py",
+        "to":   "rnaflow_server.py"
+      }
+    ],
+
+    "mac": {
+      "category":        "public.app-category.education",
+      "icon":            "assets/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements":    "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
+      "target": [
+        { "target": "dmg",  "arch": ["x64", "arm64"] },
+        { "target": "zip",  "arch": ["x64", "arm64"] }
+      ],
+      "dmg": {
+        "title":       "${productName} ${version}",
+        "iconSize":    100,
+        "background":  "assets/dmg-background.png",
+        "contents": [
+          { "x": 380, "y": 240, "type": "link",    "path": "/Applications" },
+          { "x": 130, "y": 240, "type": "file" }
+        ]
+      }
+    },
+
+    "win": {
+      "icon":          "assets/icon.ico",
+      "target": [
+        { "target": "nsis",     "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "nsis": {
+        "oneClick":          false,
+        "allowToChangeInstallationDirectory": true,
+        "installerIcon":     "assets/icon.ico",
+        "uninstallerIcon":   "assets/icon.ico",
+        "installerHeader":   "assets/installer-header.bmp",
+        "installerSidebar":  "assets/installer-sidebar.bmp",
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName":      "RNAflow",
+        "license":           "assets/LICENSE.txt"
+      }
+    },
+
+    "linux": {
+      "icon":        "assets/icon.png",
+      "category":    "Education",
+      "description": "Complete RNA-seq analysis pipeline",
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb",      "arch": ["x64"] },
+        { "target": "rpm",      "arch": ["x64"] }
+      ],
+      "deb": {
+        "depends": ["python3"]
+      }
+    },
+
+    "publish": {
+      "provider": "github",
+      "owner":    "bioinfocodex",
+      "repo":     "rnaflow"
+    }
+  }
+}

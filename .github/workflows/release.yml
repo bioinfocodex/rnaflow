@@ -1,0 +1,143 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'           # triggers on: git tag v1.0.0 && git push --tags
+
+permissions:
+  contents: write     # needed to create GitHub Releases
+
+jobs:
+
+  # ── macOS (builds both arm64 and x64 DMG + ZIP) ──────────────────────────
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: files
+        run: npm ci
+
+      - name: Build macOS (arm64 + x64)
+        working-directory: files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:mac
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-dist
+          path: files/dist/*.{dmg,zip}
+          if-no-files-found: error
+
+  # ── Windows ───────────────────────────────────────────────────────────────
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: files
+        run: npm ci
+
+      - name: Build Windows (NSIS + portable)
+        working-directory: files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:win
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-dist
+          path: files/dist/*.exe
+          if-no-files-found: error
+
+  # ── Linux ─────────────────────────────────────────────────────────────────
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: files
+        run: npm ci
+
+      - name: Build Linux (AppImage + deb + rpm)
+        working-directory: files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:linux
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-dist
+          path: |
+            files/dist/*.AppImage
+            files/dist/*.deb
+            files/dist/*.rpm
+          if-no-files-found: error
+
+  # ── Create GitHub Release & attach all files ──────────────────────────────
+  release:
+    needs: [build-mac, build-win, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-all
+          merge-multiple: true
+
+      - name: List files
+        run: ls -lh dist-all/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: RNAflow ${{ github.ref_name }}
+          body: |
+            ## RNAflow ${{ github.ref_name }}
+
+            Complete RNA-seq analysis pipeline — from raw FASTQ to publication figures.
+
+            ### Downloads
+            | Platform | File | Notes |
+            |---|---|---|
+            | macOS Apple Silicon | `RNAflow-*-arm64.dmg` | M1/M2/M3 Macs |
+            | macOS Intel | `RNAflow-*.dmg` | x64 Macs |
+            | Windows | `RNAflow-Setup-*.exe` | Installer |
+            | Windows | `RNAflow-*.exe` (portable) | No install needed |
+            | Linux | `RNAflow-*.AppImage` | Universal |
+            | Linux | `rnaflow_*_amd64.deb` | Ubuntu/Debian |
+            | Linux | `rnaflow-*.rpm` | Fedora/RHEL |
+
+            ### Requirements
+            - Python 3.8+
+            - Miniforge / Miniconda / Anaconda
+            - `rnaseq` conda environment (set up inside the app)
+
+            ### What's New
+            See [CHANGELOG](https://github.com/bioinfocodex/rnaflow/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          files: dist-all/*
+          token: ${{ secrets.GITHUB_TOKEN }}

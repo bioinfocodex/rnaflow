@@ -1,0 +1,30 @@
+# Node
+node_modules/
+files/node_modules/
+files/dist/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build artifacts
+*.dmg
+*.exe
+*.AppImage
+*.deb
+*.rpm
+dist/
+out/
+
+# Editors
+.vscode/
+*.swp
+*.swo
