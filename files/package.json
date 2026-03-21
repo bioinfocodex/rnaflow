@@ -14,11 +14,11 @@
   "scripts": {
     "start":       "electron .",
     "dev":         "NODE_ENV=development electron .",
-    "build:mac":   "electron-builder --mac",
-    "build:win":   "electron-builder --win",
-    "build:linux": "electron-builder --linux",
-    "build:all":   "electron-builder --mac --win --linux",
-    "dist":        "electron-builder"
+    "build:mac":   "electron-builder --mac --publish never",
+    "build:win":   "electron-builder --win --publish never",
+    "build:linux": "electron-builder --linux --publish never",
+    "build:all":   "electron-builder --mac --win --linux --publish never",
+    "dist":        "electron-builder --publish never"
   },
   "devDependencies": {
     "electron":         "^28.0.0",
