@@ -50,18 +50,23 @@
       ]
     },
 
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RNAflow"
+    },
+
     "win": {
       "target": [
         { "target": "nsis",     "arch": ["x64"] },
         { "target": "portable", "arch": ["x64"] }
-      ],
-      "nsis": {
-        "oneClick": false,
-        "allowToChangeInstallationDirectory": true,
-        "createDesktopShortcut": true,
-        "createStartMenuShortcut": true,
-        "shortcutName": "RNAflow"
-      }
+      ]
+    },
+
+    "deb": {
+      "depends": ["python3"]
     },
 
     "linux": {
@@ -70,10 +75,7 @@
       "target": [
         { "target": "AppImage", "arch": ["x64"] },
         { "target": "deb",      "arch": ["x64"] }
-      ],
-      "deb": {
-        "depends": ["python3"]
-      }
+      ]
     },
 
     "publish": {
