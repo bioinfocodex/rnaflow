@@ -45,7 +45,11 @@ function findPython() {
 // ── START LOCAL SERVER ───────────────────────────────────────────────────
 function startServer() {
   const python     = findPython();
-  const serverPath = path.join(__dirname, 'rnaflow_server.py');
+  // In packaged app, extraResources land in process.resourcesPath
+  // In dev (electron .), __dirname works fine
+  const serverPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'rnaflow_server.py')
+    : path.join(__dirname, 'rnaflow_server.py');
 
   if (!python) {
     dialog.showMessageBox(mainWindow, {
