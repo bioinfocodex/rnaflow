@@ -157,6 +157,22 @@ section { padding: 80px 40px; }
   margin: 0 auto 52px; font-size: 0.95em;
 }
 
+/* ── GATEKEEPER NOTICE ── */
+.gatekeeper-notice {
+  max-width: 980px; margin: 24px auto 0;
+  background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 14px;
+  padding: 18px 22px; display: flex; gap: 14px; align-items: flex-start;
+}
+.gk-icon { font-size: 1.4em; flex-shrink: 0; margin-top: 1px; }
+.gk-body { flex: 1; }
+.gk-title { font-weight: 700; font-size: 0.92em; margin-bottom: 6px; color: #92400e; }
+.gk-text  { font-size: 0.83em; color: #78350f; line-height: 1.6; }
+.gk-text code {
+  background: #fef3c7; border: 1px solid #fde68a; border-radius: 5px;
+  padding: 2px 7px; font-family: 'JetBrains Mono', monospace; font-size: 0.93em;
+  display: inline-block; margin: 3px 0;
+}
+
 /* ── DOWNLOAD CARDS ── */
 #download { background: var(--bg2); }
 .dl-grid {
@@ -504,6 +520,23 @@ footer {
     </div>
 
   </div>
+
+  <!-- macOS Gatekeeper notice -->
+  <div class="gatekeeper-notice">
+    <div class="gk-icon">⚠️</div>
+    <div class="gk-body">
+      <div class="gk-title">macOS users: "RNAflow is damaged and can't be opened"?</div>
+      <div class="gk-text">
+        This happens because RNAflow is not yet notarized with Apple (requires a paid Apple Developer account).
+        It is safe to run. To fix it, open <strong>Terminal</strong> and run:<br>
+        <code>xattr -cr ~/Downloads/RNAflow*.dmg</code><br>
+        Then open the DMG again. Or after dragging to Applications:<br>
+        <code>xattr -cr /Applications/RNAflow.app</code><br>
+        Alternatively: right-click the app → <strong>Open</strong> → click <strong>Open</strong> in the dialog.
+      </div>
+    </div>
+  </div>
+
 </section>
 
 <!-- ── FEATURES ── -->
