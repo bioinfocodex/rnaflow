@@ -159,7 +159,7 @@ section { padding: 80px 40px; }
 
 /* ── GATEKEEPER NOTICE ── */
 .gatekeeper-notice {
-  max-width: 980px; margin: 24px auto 0;
+  max-width: 980px; margin: 0 auto 28px;
   background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 14px;
   padding: 18px 22px; display: flex; gap: 14px; align-items: flex-start;
 }
@@ -372,14 +372,14 @@ footer {
     <a href="#features">Features</a>
     <a href="#pipeline">Pipeline</a>
     <a href="#download">Download</a>
-    <a href="https://github.com/bioinfocodex/rnaflow">GitHub</a>
+    <a href="manual.html">Manual</a>
   </div>
   <button class="nav-dl-btn" onclick="scrollToDownload()">⬇ Download</button>
 </nav>
 
 <!-- ── HERO ── -->
 <section class="hero">
-  <div class="hero-badge"><span class="dot"></span> Version 1.0.0 · Free &amp; Open Source</div>
+  <div class="hero-badge"><span class="dot"></span> Version 1.0.0 · RNA-seq Made Simple</div>
   <h1>RNA-seq Analysis<br><span class="grad">Made Simple</span></h1>
   <p class="hero-sub">Complete pipeline from raw FASTQ files to publication-ready figures. No command-line experience required.</p>
 
@@ -388,14 +388,12 @@ footer {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v10M7 15l5 5 5-5"/><path d="M3 19h18"/></svg>
       <span id="hero-dl-label">Download for your OS</span>
     </button>
-    <a href="https://github.com/bioinfocodex/rnaflow" class="btn-secondary">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-      View on GitHub
+    <a href="manual.html" class="btn-secondary">
+      📖 View Manual
     </a>
   </div>
   <p class="hero-meta">
     <span>🍎 macOS</span> · <span>🪟 Windows</span> · <span>🐧 Linux</span>
-    &nbsp;·&nbsp; Free forever
   </p>
 
   <!-- OS quick pills -->
@@ -419,7 +417,23 @@ footer {
 <section id="download">
   <div class="section-label">Download</div>
   <div class="section-title">Choose Your Platform</div>
-  <p class="section-sub">All builds are free. Requires Python 3.8+ and Conda (Miniforge recommended).</p>
+  <p class="section-sub">Requires Python 3.8+ and Conda (Miniforge recommended).</p>
+
+  <!-- macOS Gatekeeper notice -->
+  <div class="gatekeeper-notice">
+    <div class="gk-icon">⚠️</div>
+    <div class="gk-body">
+      <div class="gk-title">macOS users: "RNAflow is damaged and can't be opened"?</div>
+      <div class="gk-text">
+        This happens because RNAflow is not yet notarized with Apple (requires a paid Apple Developer account).
+        It is safe to run. To fix it, open <strong>Terminal</strong> and run:<br>
+        <code>xattr -cr ~/Downloads/RNAflow*.dmg</code><br>
+        Then open the DMG again. Or after dragging to Applications:<br>
+        <code>xattr -cr /Applications/RNAflow.app</code><br>
+        Alternatively: right-click the app → <strong>Open</strong> → click <strong>Open</strong> in the dialog.
+      </div>
+    </div>
+  </div>
 
   <div class="dl-grid">
 
@@ -521,21 +535,6 @@ footer {
 
   </div>
 
-  <!-- macOS Gatekeeper notice -->
-  <div class="gatekeeper-notice">
-    <div class="gk-icon">⚠️</div>
-    <div class="gk-body">
-      <div class="gk-title">macOS users: "RNAflow is damaged and can't be opened"?</div>
-      <div class="gk-text">
-        This happens because RNAflow is not yet notarized with Apple (requires a paid Apple Developer account).
-        It is safe to run. To fix it, open <strong>Terminal</strong> and run:<br>
-        <code>xattr -cr ~/Downloads/RNAflow*.dmg</code><br>
-        Then open the DMG again. Or after dragging to Applications:<br>
-        <code>xattr -cr /Applications/RNAflow.app</code><br>
-        Alternatively: right-click the app → <strong>Open</strong> → click <strong>Open</strong> in the dialog.
-      </div>
-    </div>
-  </div>
 
 </section>
 
@@ -645,10 +644,10 @@ footer {
 <!-- ── CTA ── -->
 <div class="cta-banner">
   <h2>Ready to Analyse Your RNA-seq Data?</h2>
-  <p>Free, open-source, and runs entirely on your computer. No cloud required.</p>
+  <p>Runs entirely on your computer. No cloud, no subscription, no data leaves your machine.</p>
   <a href="#download" class="btn-white" onclick="scrollToDownload()">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v10M7 15l5 5 5-5"/><path d="M3 19h18"/></svg>
-    Download RNAflow Free
+    Download RNAflow
   </a>
 </div>
 
@@ -681,9 +680,9 @@ footer {
 
     <div class="footer-col">
       <h4>Resources</h4>
-      <a href="https://github.com/bioinfocodex/rnaflow">GitHub Repository</a>
+      <a href="manual.html">User Manual</a>
       <a href="https://github.com/bioinfocodex/rnaflow/releases">Release Notes</a>
-      <a href="https://github.com/bioinfocodex/rnaflow/issues">Report a Bug</a>
+      <a href="https://bioinfocodex.com/contact">Report a Bug</a>
     </div>
 
     <div class="footer-col">
@@ -694,10 +693,10 @@ footer {
   </div>
 
   <div class="footer-bottom">
-    <span>© 2025 BioInfoCodex · MIT License</span>
+    <span>© 2025 BioInfoCodex</span>
     <span>
-      <a href="https://github.com/bioinfocodex/rnaflow/blob/main/LICENSE">License</a> ·
-      <a href="https://github.com/bioinfocodex/rnaflow">GitHub</a>
+      <a href="manual.html">Manual</a> ·
+      <a href="https://bioinfocodex.com">BioInfoCodex</a>
     </span>
   </div>
 </footer>

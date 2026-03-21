@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RNAflow Manual — Complete User Guide</title>
+<meta name="description" content="Complete user manual for RNAflow. Step-by-step RNA-seq pipeline guide, result interpretation, and troubleshooting.">
+<link rel="canonical" href="https://rnaflow.bioinfocodex.com/manual.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; background: #fff; color: #1a1d23; line-height: 1.7; }
+a { color: inherit; text-decoration: none; }
+:root {
+  --teal:   #00c896;
+  --blue:   #0969da;
+  --violet: #7c3aed;
+  --green:  #16a34a;
+  --red:    #dc2626;
+  --amber:  #d97706;
+  --text:   #1a1d23;
+  --text2:  #52596a;
+  --text3:  #8b94a3;
+  --border: #e5e7eb;
+  --bg2:    #f5f7fa;
+  --bg3:    #f0f4ff;
+  --radius: 12px;
+  --grad:   linear-gradient(135deg, #00c896 0%, #0969da 55%, #7c3aed 100%);
+  --sidebar-w: 260px;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  height: 60px;
+  display: flex; align-items: center;
+  padding: 0 32px; gap: 16px;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+.nav-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: var(--grad);
+  display: flex; align-items: center; justify-content: center;
+}
+.nav-name { font-size: 1.05em; font-weight: 800; letter-spacing: -0.4px; }
+.nav-name .rna  { color: var(--text); }
+.nav-name .flow { color: transparent; background: var(--grad); -webkit-background-clip: text; background-clip: text; }
+.nav-spacer { flex: 1; }
+.nav-back { font-size: 0.85em; font-weight: 500; color: var(--text2); display: flex; align-items: center; gap: 6px; transition: color 0.15s; }
+.nav-back:hover { color: var(--blue); }
+.nav-badge { background: rgba(9,105,218,0.08); color: var(--blue); border-radius: 6px; padding: 3px 10px; font-size: 0.78em; font-weight: 700; }
+
+/* ── LAYOUT ── */
+.layout { display: flex; min-height: calc(100vh - 60px); }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 28px 0 60px;
+  position: sticky; top: 60px; height: calc(100vh - 60px);
+  overflow-y: auto; background: #fafbfc;
+}
+.sidebar-section { margin-bottom: 8px; }
+.sidebar-label {
+  font-size: 0.68em; font-weight: 800; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text3);
+  padding: 10px 22px 4px; display: block;
+}
+.sidebar a {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 22px; font-size: 0.84em; font-weight: 500; color: var(--text2);
+  border-left: 3px solid transparent;
+  transition: all 0.12s;
+}
+.sidebar a:hover { color: var(--blue); background: rgba(9,105,218,0.04); }
+.sidebar a.active { color: var(--blue); background: rgba(9,105,218,0.07); border-left-color: var(--blue); font-weight: 600; }
+.sidebar a .num {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--bg2); color: var(--text3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72em; font-weight: 700; flex-shrink: 0;
+}
+.sidebar a.active .num { background: var(--blue); color: white; }
+
+/* ── MAIN CONTENT ── */
+.content {
+  flex: 1; min-width: 0;
+  padding: 52px 60px 100px;
+  max-width: 860px;
+}
+
+/* ── TYPOGRAPHY ── */
+h1 { font-size: 2.4em; font-weight: 900; letter-spacing: -1px; line-height: 1.15; margin-bottom: 16px; }
+h2 { font-size: 1.55em; font-weight: 800; letter-spacing: -0.4px; margin: 56px 0 16px; padding-top: 8px; border-top: 2px solid var(--border); }
+h2:first-of-type { margin-top: 32px; border-top: none; }
+h3 { font-size: 1.1em; font-weight: 700; margin: 28px 0 10px; }
+h4 { font-size: 0.95em; font-weight: 700; color: var(--text2); margin: 20px 0 8px; }
+p  { color: var(--text2); margin-bottom: 14px; }
+ul, ol { padding-left: 22px; color: var(--text2); margin-bottom: 14px; }
+li { margin-bottom: 6px; }
+strong { color: var(--text); font-weight: 600; }
+code {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.87em;
+  background: #f0f2f5; border: 1px solid #dde0e5;
+  border-radius: 5px; padding: 1px 6px; color: var(--text);
+}
+
+/* ── LEAD ── */
+.lead { font-size: 1.1em; color: var(--text2); margin-bottom: 32px; line-height: 1.7; }
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #0d1117; border-radius: 10px;
+  padding: 18px 22px; margin: 16px 0;
+  overflow-x: auto; position: relative;
+}
+.code-block pre { color: #e6edf3; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; line-height: 1.7; white-space: pre; }
+.code-block .comment { color: #8b949e; }
+.code-block .cmd { color: #79c0ff; }
+.code-block .str { color: #a5d6ff; }
+.code-label {
+  font-size: 0.72em; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  color: #8b949e; margin-bottom: 10px; display: block;
+}
+
+/* ── CALLOUTS ── */
+.callout {
+  border-radius: 10px; padding: 16px 20px; margin: 20px 0;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.callout-icon { font-size: 1.2em; flex-shrink: 0; margin-top: 1px; }
+.callout-body { flex: 1; }
+.callout-title { font-weight: 700; font-size: 0.9em; margin-bottom: 5px; }
+.callout-text  { font-size: 0.85em; line-height: 1.6; }
+.callout.info    { background: #eff6ff; border: 1px solid #bfdbfe; }
+.callout.info    .callout-title { color: #1e40af; }
+.callout.info    .callout-text  { color: #1e3a8a; }
+.callout.warn    { background: #fffbeb; border: 1px solid #fde68a; }
+.callout.warn    .callout-title { color: #92400e; }
+.callout.warn    .callout-text  { color: #78350f; }
+.callout.success { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.callout.success .callout-title { color: #15803d; }
+.callout.success .callout-text  { color: #14532d; }
+.callout.error   { background: #fff1f2; border: 1px solid #fecdd3; }
+.callout.error   .callout-title { color: #be123c; }
+.callout.error   .callout-text  { color: #881337; }
+
+/* ── RESULT PANELS ── */
+.result-panel {
+  border: 1.5px solid var(--border); border-radius: 12px;
+  margin: 20px 0; overflow: hidden;
+}
+.result-header {
+  background: var(--bg2); padding: 12px 18px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.result-header .r-icon { font-size: 1.1em; }
+.result-header .r-title { font-weight: 700; font-size: 0.9em; }
+.result-header .r-sub   { font-size: 0.77em; color: var(--text3); margin-left: auto; }
+.result-body { padding: 18px; }
+.result-body p { margin-bottom: 10px; }
+.result-body p:last-child { margin-bottom: 0; }
+
+/* ── SVG DIAGRAMS ── */
+.diagram {
+  border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 24px; margin: 20px 0; background: #fafbfc;
+  text-align: center;
+}
+.diagram figcaption {
+  font-size: 0.8em; color: var(--text3); margin-top: 12px; font-style: italic;
+}
+
+/* ── METRIC CARDS ── */
+.metric-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+.metric-card {
+  flex: 1; min-width: 140px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; background: white;
+}
+.metric-val { font-size: 1.6em; font-weight: 800; letter-spacing: -0.5px; }
+.metric-lbl { font-size: 0.78em; color: var(--text3); margin-top: 2px; }
+.metric-card.good  .metric-val { color: var(--green); }
+.metric-card.warn  .metric-val { color: var(--amber); }
+.metric-card.bad   .metric-val { color: var(--red); }
+
+/* ── STEP HEADER ── */
+.step-header {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+}
+.step-badge {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: var(--grad); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3em; flex-shrink: 0;
+  box-shadow: 0 3px 12px rgba(9,105,218,0.3);
+}
+.step-meta { flex: 1; }
+.step-meta h2 { margin: 0; border: none; font-size: 1.35em; }
+.step-meta p  { margin: 4px 0 0; font-size: 0.85em; }
+
+/* ── TABLE ── */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88em; }
+th { background: var(--bg2); text-align: left; padding: 10px 14px; font-weight: 700; border-bottom: 2px solid var(--border); }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+td code { font-size: 0.85em; }
+
+/* ── TROUBLESHOOT ── */
+.trouble-item {
+  border: 1.5px solid var(--border); border-radius: 10px;
+  margin: 14px 0; overflow: hidden;
+}
+.trouble-q {
+  padding: 14px 18px; background: #fff8f0;
+  border-bottom: 1px solid #fde68a;
+  font-weight: 700; font-size: 0.9em; color: #92400e;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.trouble-a { padding: 16px 18px; font-size: 0.88em; color: var(--text2); }
+.trouble-a code { display: inline-block; margin: 3px 0; }
+
+/* ── TOC INTRO ── */
+.toc-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin: 24px 0;
+}
+.toc-item {
+  border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.toc-item:hover { border-color: var(--blue); background: var(--bg3); }
+.toc-item .t-icon { font-size: 1.3em; flex-shrink: 0; }
+.toc-item .t-text { font-size: 0.85em; font-weight: 600; color: var(--text); }
+.toc-item .t-sub  { font-size: 0.75em; color: var(--text3); margin-top: 2px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .content { padding: 32px 20px 60px; }
+  h1 { font-size: 1.8em; }
+  .toc-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-icon">
+      <svg width="18" height="18" viewBox="0 0 26 26" fill="none">
+        <path d="M3 22 C5 18 10 17 13 13 C16 9 21 8 23 4" stroke="white" stroke-width="2.1" stroke-linecap="round" fill="none"/>
+        <line x1="6.5" y1="19" x2="9" y2="21.5" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="9" cy="21.5" r="1.8" fill="#f87171"/>
+        <line x1="11.5" y1="14.5" x2="14" y2="17" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="14" cy="17" r="1.8" fill="#fbbf24"/>
+        <line x1="16.5" y1="10" x2="19" y2="12.5" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="19" cy="12.5" r="1.8" fill="#34d399"/>
+        <line x1="21" y1="6" x2="23" y2="8.5" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="23" cy="8.5" r="1.8" fill="#c4b5fd"/>
+      </svg>
+    </div>
+    <span class="nav-name"><span class="rna">RNA</span><span class="flow">flow</span></span>
+  </div>
+  <div class="nav-spacer"></div>
+  <span class="nav-badge">User Manual</span>
+  <a href="index.html" class="nav-back">← Back to Download</a>
+</nav>
+
+<div class="layout">
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-section">
+    <span class="sidebar-label">Getting Started</span>
+    <a href="#installation"><span class="num">↓</span> Installation</a>
+    <a href="#first-launch"><span class="num">🚀</span> First Launch</a>
+    <a href="#interface"><span class="num">🖥</span> Interface Overview</a>
+  </div>
+  <div class="sidebar-section">
+    <span class="sidebar-label">Pipeline Steps</span>
+    <a href="#step-check"><span class="num">✓</span> System Check</a>
+    <a href="#step-config"><span class="num">⚙</span> Configure Project</a>
+    <a href="#step-install"><span class="num">1</span> Install Tools</a>
+    <a href="#step-data"><span class="num">2</span> Download Data</a>
+    <a href="#step-qc"><span class="num">3</span> Quality Control</a>
+    <a href="#step-trim"><span class="num">4</span> Trimming</a>
+    <a href="#step-index"><span class="num">5</span> Genome Index</a>
+    <a href="#step-align"><span class="num">6</span> Alignment</a>
+    <a href="#step-count"><span class="num">7</span> Gene Counting</a>
+    <a href="#step-deseq"><span class="num">9</span> DESeq2</a>
+    <a href="#step-plots"><span class="num">10</span> Plots &amp; Results</a>
+    <a href="#step-advanced"><span class="num">+</span> Advanced</a>
+  </div>
+  <div class="sidebar-section">
+    <span class="sidebar-label">Understanding Results</span>
+    <a href="#res-fastqc"><span class="num">📊</span> FastQC Report</a>
+    <a href="#res-alignment"><span class="num">🎯</span> Alignment Stats</a>
+    <a href="#res-counts"><span class="num">#</span> Count Matrix</a>
+    <a href="#res-pca"><span class="num">🔵</span> PCA Plot</a>
+    <a href="#res-volcano"><span class="num">🌋</span> Volcano Plot</a>
+    <a href="#res-heatmap"><span class="num">🔥</span> Heatmap</a>
+    <a href="#res-gsea"><span class="num">🌐</span> GSEA</a>
+  </div>
+  <div class="sidebar-section">
+    <span class="sidebar-label">Troubleshooting</span>
+    <a href="#trouble-install"><span class="num">⚠</span> Installation Issues</a>
+    <a href="#trouble-conda"><span class="num">🐍</span> Conda Problems</a>
+    <a href="#trouble-align"><span class="num">🎯</span> Alignment Errors</a>
+    <a href="#trouble-deseq"><span class="num">R</span> R / DESeq2 Errors</a>
+    <a href="#trouble-mac"><span class="num">🍎</span> macOS Issues</a>
+  </div>
+</aside>
+
+<!-- ── CONTENT ── -->
+<main class="content">
+
+<!-- ═══ INTRO ═══════════════════════════════════════════════════════════ -->
+<h1>RNAflow User Manual</h1>
+<p class="lead">This manual guides you through every step of an RNA-seq analysis — from installing the app to interpreting your final results. Each section explains what is happening, what good results look like, and how to fix common problems.</p>
+
+<div class="toc-grid">
+  <a href="#installation" class="toc-item">
+    <span class="t-icon">⬇️</span>
+    <div><div class="t-text">Installation</div><div class="t-sub">macOS, Windows, Linux</div></div>
+  </a>
+  <a href="#step-check" class="toc-item">
+    <span class="t-icon">🧬</span>
+    <div><div class="t-text">Pipeline Steps</div><div class="t-sub">13-step guided workflow</div></div>
+  </a>
+  <a href="#res-fastqc" class="toc-item">
+    <span class="t-icon">📊</span>
+    <div><div class="t-text">Understanding Results</div><div class="t-sub">FastQC, PCA, Volcano, GSEA</div></div>
+  </a>
+  <a href="#trouble-install" class="toc-item">
+    <span class="t-icon">🔧</span>
+    <div><div class="t-text">Troubleshooting</div><div class="t-sub">Common errors &amp; fixes</div></div>
+  </a>
+</div>
+
+<!-- ═══ INSTALLATION ════════════════════════════════════════════════════ -->
+<h2 id="installation">Installation</h2>
+
+<h3>Step 1 — Download RNAflow</h3>
+<p>Go to <a href="index.html" style="color:var(--blue);font-weight:600;">rnaflow.bioinfocodex.com</a> and download the version for your operating system.</p>
+
+<table>
+  <tr><th>Platform</th><th>File to download</th><th>Notes</th></tr>
+  <tr><td>macOS Apple Silicon (M1/M2/M3)</td><td><code>RNAflow-*-arm64.dmg</code></td><td>Most Macs since 2020</td></tr>
+  <tr><td>macOS Intel</td><td><code>RNAflow-*.dmg</code></td><td>Macs before 2020</td></tr>
+  <tr><td>Windows 10/11</td><td><code>RNAflow-Setup-*.exe</code></td><td>Recommended installer</td></tr>
+  <tr><td>Linux (Ubuntu/Debian)</td><td><code>rnaflow_*_amd64.deb</code></td><td>Ubuntu 20.04+</td></tr>
+  <tr><td>Linux (universal)</td><td><code>RNAflow-*.AppImage</code></td><td>Any Linux distribution</td></tr>
+</table>
+
+<h3>Step 2 — Install on macOS</h3>
+<ol>
+  <li>Open the downloaded <code>.dmg</code> file</li>
+  <li>Drag <strong>RNAflow.app</strong> into your <strong>Applications</strong> folder</li>
+  <li>Double-click RNAflow in Applications to launch it</li>
+</ol>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body">
+    <div class="callout-title">"RNAflow is damaged and can't be opened"</div>
+    <div class="callout-text">
+      macOS blocks apps that are not notarized with Apple. This is a security warning, not a virus. To fix it, open <strong>Terminal</strong> (search "Terminal" in Spotlight) and run:<br><br>
+      <code>xattr -cr ~/Downloads/RNAflow*.dmg</code><br><br>
+      Then open the DMG again and drag to Applications. Or after dragging:<br>
+      <code>xattr -cr /Applications/RNAflow.app</code><br><br>
+      Alternatively, <strong>right-click</strong> the app → <strong>Open</strong> → click <strong>Open</strong> in the popup dialog.
+    </div>
+  </div>
+</div>
+
+<h3>Step 3 — Install Miniforge (Conda)</h3>
+<p>RNAflow uses Conda to install bioinformatics tools. <strong>Miniforge</strong> is the recommended Conda distribution — it is lighter and faster than Anaconda.</p>
+<ol>
+  <li>Go to <strong>github.com/conda-forge/miniforge/releases</strong></li>
+  <li>Download the installer for your system</li>
+  <li>Run the installer and follow the prompts</li>
+  <li>Restart your Terminal after installation</li>
+</ol>
+
+<div class="code-block">
+  <span class="code-label">Verify Conda is installed</span>
+  <pre><span class="cmd">conda --version</span>
+<span class="comment"># Expected output: conda 24.x.x or similar</span></pre>
+</div>
+
+<h3>Step 4 — Create the rnaseq environment</h3>
+<p>RNAflow expects a Conda environment named <code>rnaseq</code>. Create it before running the pipeline:</p>
+
+<div class="code-block">
+  <pre><span class="cmd">conda create -n rnaseq python=3.10 -y</span>
+<span class="cmd">conda activate rnaseq</span></pre>
+</div>
+
+<!-- ═══ FIRST LAUNCH ═══════════════════════════════════════════════════ -->
+<h2 id="first-launch">First Launch</h2>
+
+<p>When you open RNAflow, the app starts a small local server in the background — this allows the "Run" buttons to execute commands on your machine. You will see a green connection indicator in the top-right of the sidebar when the server is ready (usually within 2–3 seconds).</p>
+
+<div class="diagram">
+  <svg width="600" height="120" viewBox="0 0 600 120" style="max-width:100%;">
+    <!-- Server status flow -->
+    <rect x="10" y="40" width="130" height="40" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text x="75" y="56" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#1e40af">App Opens</text>
+    <text x="75" y="72" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#3b82f6">RNAflow.app</text>
+    <path d="M140 60 L170 60" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <rect x="170" y="40" width="150" height="40" rx="8" fill="#fef3c7" stroke="#fde68a" stroke-width="1.5"/>
+    <text x="245" y="56" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#92400e">Server Starting</text>
+    <text x="245" y="72" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#b45309">rnaflow_server.py</text>
+    <path d="M320 60 L350 60" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <rect x="350" y="40" width="130" height="40" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+    <text x="415" y="56" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#15803d">Server Ready</text>
+    <text x="415" y="72" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#16a34a">● Green dot visible</text>
+    <path d="M480 60 L510 60" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <rect x="510" y="40" width="80" height="40" rx="8" fill="#f0f4ff" stroke="#c7d2fe" stroke-width="1.5"/>
+    <text x="550" y="56" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="600" fill="#4338ca">Run Mode</text>
+    <text x="550" y="72" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#6366f1">Available</text>
+
+    <defs>
+      <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+      </marker>
+    </defs>
+  </svg>
+  <figcaption>App startup sequence — the server is ready in 2–3 seconds</figcaption>
+</div>
+
+<div class="callout info">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body">
+    <div class="callout-title">Two modes: Copy and Run</div>
+    <div class="callout-text">
+      Every step has two buttons. <strong>Copy</strong> copies the command to your clipboard so you can paste it in your own Terminal. <strong>Run</strong> executes the command directly inside the app with live output streaming. Both produce identical results.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ INTERFACE ════════════════════════════════════════════════════════ -->
+<h2 id="interface">Interface Overview</h2>
+
+<div class="diagram">
+  <svg width="620" height="320" viewBox="0 0 620 320" style="max-width:100%;">
+    <!-- App window frame -->
+    <rect x="10" y="10" width="600" height="300" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+    <!-- Title bar -->
+    <rect x="10" y="10" width="600" height="36" rx="10" fill="#1e293b"/>
+    <rect x="10" y="36" width="600" height="10" fill="#1e293b"/>
+    <circle cx="36" cy="28" r="6" fill="#ef4444"/>
+    <circle cx="56" cy="28" r="6" fill="#fbbf24"/>
+    <circle cx="76" cy="28" r="6" fill="#22c55e"/>
+    <text x="310" y="33" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="#94a3b8">RNAflow</text>
+    <!-- Sidebar -->
+    <rect x="10" y="46" width="160" height="264" fill="#0f172a"/>
+    <rect x="20" y="60" width="140" height="28" rx="6" fill="#1e293b"/>
+    <text x="90" y="79" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#60a5fa">✓ System Check</text>
+    <rect x="20" y="93" width="140" height="24" rx="6" fill="transparent"/>
+    <text x="90" y="110" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#64748b">⚙ Configure</text>
+    <text x="90" y="132" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#64748b">📦 Install Tools</text>
+    <text x="90" y="152" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#64748b">⬇ Download Data</text>
+    <text x="90" y="172" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#64748b">🔍 Quality Control</text>
+    <text x="90" y="192" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#64748b">✂ Trimming</text>
+    <text x="90" y="212" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#64748b">🧬 Genome Index</text>
+    <text x="90" y="232" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#64748b">🎯 Alignment</text>
+    <rect x="20" y="286" width="140" height="18" rx="5" fill="#1e293b"/>
+    <circle cx="155" cy="295" r="5" fill="#22c55e"/>
+    <text x="85" y="298" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#94a3b8">Server Connected</text>
+    <!-- Main area -->
+    <rect x="170" y="56" width="430" height="254" fill="white"/>
+    <!-- Step title area -->
+    <rect x="180" y="66" width="410" height="50" rx="8" fill="#f0f4ff"/>
+    <text x="200" y="85" font-family="Inter,sans-serif" font-size="13" font-weight="700" fill="#1e293b">✓ System Check</text>
+    <text x="200" y="103" font-family="Inter,sans-serif" font-size="10" fill="#64748b">Check your environment before starting the pipeline</text>
+    <!-- Command area -->
+    <rect x="180" y="128" width="410" height="50" rx="6" fill="#0d1117"/>
+    <text x="196" y="148" font-family="monospace" font-size="10" fill="#79c0ff">conda activate rnaseq</text>
+    <text x="196" y="165" font-family="monospace" font-size="10" fill="#e6edf3">conda info --envs</text>
+    <!-- Buttons -->
+    <rect x="180" y="190" width="90" height="28" rx="6" fill="#0969da"/>
+    <text x="225" y="209" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="white" font-weight="600">▶ Run</text>
+    <rect x="280" y="190" width="90" height="28" rx="6" fill="#f1f5f9" stroke="#e2e8f0"/>
+    <text x="325" y="209" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#475569" font-weight="600">⧉ Copy</text>
+    <!-- Terminal output -->
+    <rect x="180" y="232" width="410" height="68" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="196" y="250" font-family="monospace" font-size="9" fill="#22c55e">✓ conda found: /opt/miniforge3/bin/conda</text>
+    <text x="196" y="264" font-family="monospace" font-size="9" fill="#22c55e">✓ rnaseq environment found</text>
+    <text x="196" y="278" font-family="monospace" font-size="9" fill="#94a3b8">Python 3.10.12 | STAR 2.7.11</text>
+    <!-- Labels -->
+    <text x="90" y="255" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#60a5fa">← Sidebar navigation</text>
+    <text x="420" y="270" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#64748b">Live terminal output →</text>
+  </svg>
+  <figcaption>RNAflow interface: sidebar navigation on the left, step content and live terminal on the right</figcaption>
+</div>
+
+<!-- ═══ PIPELINE STEPS ══════════════════════════════════════════════════ -->
+<h2 id="step-check">Step ✓ — System Check</h2>
+<div class="step-header">
+  <div class="step-badge">✓</div>
+  <div class="step-meta">
+    <p>Verifies your environment before starting. Always run this first.</p>
+  </div>
+</div>
+
+<p>This step checks that Conda, Python, and the <code>rnaseq</code> environment exist and are accessible. It also checks for conflicting software that could cause problems later.</p>
+
+<div class="result-panel">
+  <div class="result-header"><span class="r-icon">✅</span><span class="r-title">What good output looks like</span></div>
+  <div class="result-body">
+    <div class="code-block"><pre><span class="comment"># Good output</span>
+<span class="cmd">✓</span> conda found at /opt/miniforge3/bin/conda
+<span class="cmd">✓</span> rnaseq environment exists
+<span class="cmd">✓</span> Python 3.10.12 in rnaseq
+<span class="cmd">✓</span> No conflicting base packages detected</pre></div>
+  </div>
+</div>
+
+<div class="callout error">
+  <div class="callout-icon">❌</div>
+  <div class="callout-body">
+    <div class="callout-title">Problem: "conda: command not found"</div>
+    <div class="callout-text">Conda is not installed or not in your PATH. Install Miniforge from the Requirements section, then restart your Terminal and reopen RNAflow.</div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-config">Step ⚙ — Configure Project</h2>
+<div class="step-header">
+  <div class="step-badge">⚙</div>
+  <div class="step-meta">
+    <p>Set your organism, sequencing type, and project directory.</p>
+  </div>
+</div>
+
+<p>Fill in the configuration panel before starting the pipeline. These settings control which genome, annotation, and tools are used throughout all subsequent steps.</p>
+
+<table>
+  <tr><th>Setting</th><th>Description</th><th>Examples</th></tr>
+  <tr><td><strong>Organism</strong></td><td>The species you are studying</td><td>human, mouse, yeast, fly</td></tr>
+  <tr><td><strong>Base folder</strong></td><td>Where all project files will be saved</td><td><code>/home/user/my_rnaseq</code></td></tr>
+  <tr><td><strong>Sequencing type</strong></td><td>Single-end or paired-end reads</td><td>PE (most modern datasets)</td></tr>
+  <tr><td><strong>Strandedness</strong></td><td>Library strand specificity</td><td>Check kit protocol — usually "reverse"</td></tr>
+  <tr><td><strong>Aligner</strong></td><td>Tool for aligning reads to the genome</td><td>STAR (recommended) or HISAT2</td></tr>
+</table>
+
+<div class="callout info">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body">
+    <div class="callout-title">Not sure about strandedness?</div>
+    <div class="callout-text">Check your RNA-seq kit manual. Most modern kits (e.g., Illumina TruSeq) use <strong>reverse strand</strong>. If unsure, run <code>infer_experiment.py</code> from RSeQC after alignment (Step 6) and it will tell you.</div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-install">Step 1 — Install Tools</h2>
+<div class="step-header">
+  <div class="step-badge" style="font-size:1em;font-weight:800;">1</div>
+  <div class="step-meta">
+    <p>Installs all bioinformatics tools via Conda into the <code>rnaseq</code> environment.</p>
+  </div>
+</div>
+
+<p>This step installs STAR, HISAT2, Salmon, FastQC, Trimmomatic, MultiQC, featureCounts, and other tools. It only needs to run once — Conda caches packages so reinstalling is fast.</p>
+
+<div class="code-block">
+  <span class="code-label">What gets installed</span>
+  <pre>STAR           — splice-aware aligner (fast, accurate)
+HISAT2         — alternative aligner (lower memory)
+Salmon         — quasi-mapping quantifier
+FastQC         — per-read quality metrics
+Trimmomatic    — adapter and quality trimming
+MultiQC        — aggregate QC report
+featureCounts  — gene-level read counting
+samtools       — BAM file manipulation
+bedtools       — genomic interval operations</pre>
+</div>
+
+<div class="callout warn">
+  <div class="callout-icon">⏱</div>
+  <div class="callout-body">
+    <div class="callout-title">This step can take 10–30 minutes on first run</div>
+    <div class="callout-text">Conda is downloading and installing large packages. The terminal will show progress. Do not close the app. Subsequent installs are much faster as packages are cached locally.</div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-data">Step 2 — Download Data</h2>
+<div class="step-header">
+  <div class="step-badge" style="font-size:1em;font-weight:800;">2</div>
+  <div class="step-meta">
+    <p>Downloads your reference genome, GTF annotation, and FASTQ files.</p>
+  </div>
+</div>
+
+<p>You need three things: a reference genome (FASTA), a gene annotation file (GTF), and your raw sequencing reads (FASTQ). RNAflow generates the commands to download all of these from Ensembl, NCBI, or SRA.</p>
+
+<table>
+  <tr><th>File type</th><th>Source</th><th>Typical size</th></tr>
+  <tr><td>Genome FASTA</td><td>Ensembl / NCBI</td><td>700 MB – 3 GB</td></tr>
+  <tr><td>Gene annotation GTF</td><td>Ensembl / NCBI</td><td>50 – 200 MB</td></tr>
+  <tr><td>FASTQ reads (per sample)</td><td>SRA / ENA / your sequencer</td><td>1 – 20 GB</td></tr>
+</table>
+
+<div class="callout info">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body">
+    <div class="callout-title">Downloading from SRA</div>
+    <div class="callout-text">Public datasets are stored on NCBI SRA. Use the SRA accession number (e.g., <code>SRR12345678</code>) and the <code>fasterq-dump</code> command. RNAflow generates this command for you — just enter your accession numbers.</div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-qc">Step 3 — Quality Control</h2>
+<div class="step-header">
+  <div class="step-badge" style="font-size:1em;font-weight:800;">3</div>
+  <div class="step-meta">
+    <p>Assess the quality of your raw reads before analysis.</p>
+  </div>
+</div>
+
+<p>FastQC generates a per-sample quality report. MultiQC then combines all reports into a single HTML file. Always check this before trimming — it tells you which adapters are present and whether quality drops at the 3' end.</p>
+
+<div class="callout info">
+  <div class="callout-icon">📊</div>
+  <div class="callout-body">
+    <div class="callout-title">See the next section "Understanding Results → FastQC Report" for a full guide to interpreting FastQC output.</div>
+    <div class="callout-text">Jump to <a href="#res-fastqc" style="color:var(--blue);font-weight:600;">FastQC Results →</a></div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-trim">Step 4 — Trimming</h2>
+<div class="step-header">
+  <div class="step-badge" style="font-size:1em;font-weight:800;">4</div>
+  <div class="step-meta">
+    <p>Remove adapter sequences and low-quality bases from your reads.</p>
+  </div>
+</div>
+
+<p>Trimming improves alignment quality by removing adapter contamination and poor-quality bases from the ends of reads. RNAflow uses <strong>Trimmomatic</strong> (standard) or <strong>fastp</strong> (faster, with HTML report).</p>
+
+<table>
+  <tr><th>Parameter</th><th>Meaning</th><th>Default</th></tr>
+  <tr><td><code>LEADING</code></td><td>Remove bases below this quality from start</td><td>3</td></tr>
+  <tr><td><code>TRAILING</code></td><td>Remove bases below this quality from end</td><td>3</td></tr>
+  <tr><td><code>SLIDINGWINDOW</code></td><td>Trim when window average falls below threshold</td><td>4:15</td></tr>
+  <tr><td><code>MINLEN</code></td><td>Discard reads shorter than this after trimming</td><td>36</td></tr>
+</table>
+
+<div class="result-panel">
+  <div class="result-header"><span class="r-icon">✅</span><span class="r-title">Good trimming result</span></div>
+  <div class="result-body">
+    <p>After trimming you should retain <strong>≥ 90%</strong> of reads. If you are losing more than 20% of reads, check that you selected the correct adapter sequences.</p>
+    <div class="metric-row">
+      <div class="metric-card good"><div class="metric-val">97%</div><div class="metric-lbl">Reads surviving</div></div>
+      <div class="metric-card good"><div class="metric-val">1.2%</div><div class="metric-lbl">Dropped (too short)</div></div>
+      <div class="metric-card warn"><div class="metric-val">75%</div><div class="metric-lbl">Reads surviving — investigate</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-index">Step 5 — Genome Index</h2>
+<div class="step-header">
+  <div class="step-badge" style="font-size:1em;font-weight:800;">5</div>
+  <div class="step-meta">
+    <p>Build a searchable index from the reference genome for fast alignment.</p>
+  </div>
+</div>
+
+<p>Before alignment, the genome FASTA must be indexed. This is done once and reused for all samples. STAR indexing requires 30–50 GB of RAM for human/mouse genomes. For smaller organisms (yeast, fly), 8 GB is sufficient.</p>
+
+<div class="callout warn">
+  <div class="callout-icon">💾</div>
+  <div class="callout-body">
+    <div class="callout-title">Memory requirements for STAR genome index</div>
+    <div class="callout-text">
+      Human / Mouse genome: <strong>32–50 GB RAM</strong> required<br>
+      Yeast / Fly / Worm: <strong>8 GB RAM</strong> sufficient<br><br>
+      If your machine has less RAM, use <strong>HISAT2</strong> instead — it builds a smaller index using only 8 GB for human.
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-align">Step 6 — Alignment</h2>
+<div class="step-header">
+  <div class="step-badge" style="font-size:1em;font-weight:800;">6</div>
+  <div class="step-meta">
+    <p>Align trimmed reads to the reference genome. Produces BAM files.</p>
+  </div>
+</div>
+
+<p>STAR aligns reads to the genome, accounting for splicing. Each sample produces a sorted, indexed BAM file. RNAflow runs all samples sequentially and streams STAR's output live in the terminal.</p>
+
+<div class="result-panel">
+  <div class="result-header"><span class="r-icon">📊</span><span class="r-title">STAR alignment log — what to check</span><span class="r-sub">Log.final.out</span></div>
+  <div class="result-body">
+    <div class="metric-row">
+      <div class="metric-card good"><div class="metric-val">85–95%</div><div class="metric-lbl">Uniquely mapped — excellent</div></div>
+      <div class="metric-card warn"><div class="metric-val">70–84%</div><div class="metric-lbl">Uniquely mapped — acceptable</div></div>
+      <div class="metric-card bad"><div class="metric-val">&lt;70%</div><div class="metric-lbl">Uniquely mapped — investigate</div></div>
+    </div>
+    <p>See <a href="#res-alignment" style="color:var(--blue);">Understanding Results → Alignment Stats</a> for full interpretation.</p>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-count">Step 7 — Gene Counting</h2>
+<div class="step-header">
+  <div class="step-badge" style="font-size:1em;font-weight:800;">7</div>
+  <div class="step-meta">
+    <p>Count reads mapping to each gene. Produces the count matrix.</p>
+  </div>
+</div>
+
+<p><strong>featureCounts</strong> counts how many aligned reads overlap each gene in the annotation GTF. The output is a tab-delimited count matrix with genes as rows and samples as columns — this is the input for DESeq2.</p>
+
+<div class="code-block">
+  <span class="code-label">Count matrix format (first few rows)</span>
+  <pre>GeneID          sample1  sample2  sample3  sample4
+ENSG00000000003   1234     1089     2341     1876
+ENSG00000000005    456      398      821      701
+ENSG00000000419   8901     9234    17543    16230</pre>
+</div>
+
+<div class="callout info">
+  <div class="callout-icon">💡</div>
+  <div class="callout-body">
+    <div class="callout-title">Strandedness matters here</div>
+    <div class="callout-text">If you set the wrong strandedness in featureCounts, you will get very low assigned reads (&lt;30%). The featureCounts output shows "Assigned" percentage — if it is low, try changing <code>-s 0</code> (unstranded), <code>-s 1</code> (forward), or <code>-s 2</code> (reverse).</div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-deseq">Step 9 — DESeq2 Differential Expression</h2>
+<div class="step-header">
+  <div class="step-badge" style="font-size:1em;font-weight:800;">9</div>
+  <div class="step-meta">
+    <p>Statistical analysis to find differentially expressed genes.</p>
+  </div>
+</div>
+
+<p>DESeq2 is an R package that uses a negative binomial model to identify genes that are significantly different between conditions. RNAflow generates the complete R script — you just click Run and the results appear in your project folder.</p>
+
+<p>DESeq2 normalises for library size differences, estimates dispersion, and tests each gene for differential expression. The output is a table of genes with their log2 fold change, p-value, and adjusted p-value (padj).</p>
+
+<table>
+  <tr><th>Column</th><th>Meaning</th><th>Threshold for significance</th></tr>
+  <tr><td><code>baseMean</code></td><td>Average normalised count across all samples</td><td>— (higher = more reliable)</td></tr>
+  <tr><td><code>log2FoldChange</code></td><td>Fold change in log2 scale (positive = up in treatment)</td><td>|LFC| &gt; 1</td></tr>
+  <tr><td><code>pvalue</code></td><td>Raw statistical p-value</td><td>— (use padj instead)</td></tr>
+  <tr><td><code>padj</code></td><td>P-value adjusted for multiple testing (Benjamini-Hochberg)</td><td>&lt; 0.05 (typical)</td></tr>
+</table>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-plots">Step 10 — Plots &amp; Results</h2>
+<p>After DESeq2, RNAflow generates publication-ready figures automatically. See the full interpretation guide in the <a href="#res-pca" style="color:var(--blue);">Understanding Results</a> section below.</p>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="step-advanced">Advanced Steps — Multi-factor Design &amp; GSEA</h2>
+
+<h3>Multi-factor Design</h3>
+<p>Use when your experiment has more than one variable — for example, treatment AND time point, or treatment AND batch. The DESeq2 design formula becomes <code>~ batch + condition</code> to control for the additional variable.</p>
+
+<h3>Batch Correction</h3>
+<p>If samples were sequenced in different batches, technical variation can mask biological signal. RNAflow supports:</p>
+<ul>
+  <li><strong>ComBat-seq</strong> — corrects raw counts directly (recommended for DESeq2)</li>
+  <li><strong>limma::removeBatchEffect</strong> — corrects normalised values for PCA/heatmaps</li>
+  <li><strong>SVA</strong> — estimates hidden batch effects automatically when batch is unknown</li>
+</ul>
+
+<h3>GSEA &amp; Pathway Analysis</h3>
+<p>After finding differentially expressed genes, pathway analysis tells you <em>which biological processes</em> are changed. RNAflow supports:</p>
+<ul>
+  <li><strong>ORA (Over-Representation Analysis)</strong> — tests if your DE gene list is enriched in specific GO terms or KEGG pathways</li>
+  <li><strong>GSEA (Gene Set Enrichment Analysis)</strong> — uses the full ranked gene list, more sensitive than ORA</li>
+  <li><strong>Databases</strong> — GO (Biological Process, Molecular Function, Cellular Component), KEGG, Reactome</li>
+</ul>
+
+<!-- ═══ UNDERSTANDING RESULTS ═══════════════════════════════════════════ -->
+<h2 id="res-fastqc">Understanding Results: FastQC Report</h2>
+
+<p>FastQC generates a report with multiple modules. Each module is marked with a ✅ (pass), ⚠️ (warn), or ❌ (fail). <strong>Warnings and fails are not always a problem</strong> — some are expected for RNA-seq data.</p>
+
+<div class="diagram">
+  <svg width="580" height="260" viewBox="0 0 580 260" style="max-width:100%;">
+    <!-- Quality scores chart illustration -->
+    <rect x="10" y="10" width="560" height="240" rx="8" fill="#0d1117"/>
+    <text x="290" y="35" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="700" fill="#e6edf3">Per-Base Sequence Quality</text>
+    <!-- Y axis -->
+    <line x1="60" y1="45" x2="60" y2="200" stroke="#30363d" stroke-width="1"/>
+    <line x1="60" y1="200" x2="540" y2="200" stroke="#30363d" stroke-width="1"/>
+    <text x="50" y="80" text-anchor="end" font-family="monospace" font-size="9" fill="#8b949e">40</text>
+    <text x="50" y="120" text-anchor="end" font-family="monospace" font-size="9" fill="#8b949e">28</text>
+    <text x="50" y="160" text-anchor="end" font-family="monospace" font-size="9" fill="#8b949e">20</text>
+    <text x="50" y="200" text-anchor="end" font-family="monospace" font-size="9" fill="#8b949e">0</text>
+    <!-- Green zone (>28) -->
+    <rect x="60" y="45" width="480" height="75" fill="rgba(34,197,94,0.08)"/>
+    <!-- Yellow zone (20-28) -->
+    <rect x="60" y="120" width="480" height="40" fill="rgba(251,191,36,0.08)"/>
+    <!-- Red zone (<20) -->
+    <rect x="60" y="160" width="480" height="40" fill="rgba(239,68,68,0.08)"/>
+    <!-- Zone labels -->
+    <text x="530" y="80" text-anchor="end" font-family="Inter,sans-serif" font-size="9" fill="#22c55e">Good (Q&gt;28)</text>
+    <text x="530" y="135" text-anchor="end" font-family="Inter,sans-serif" font-size="9" fill="#fbbf24">OK (Q20-28)</text>
+    <text x="530" y="175" text-anchor="end" font-family="Inter,sans-serif" font-size="9" fill="#ef4444">Poor (&lt;Q20)</text>
+    <!-- Quality line (good sample) -->
+    <polyline points="70,55 150,52 230,54 310,58 370,65 420,72 460,85 500,100 530,120"
+      fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Shaded area -->
+    <polygon points="70,52 150,48 230,50 310,54 370,61 420,68 460,81 500,96 530,116 530,130 500,115 460,100 420,88 370,80 310,74 230,70 150,68 70,72"
+      fill="rgba(34,197,94,0.15)"/>
+    <!-- X axis labels -->
+    <text x="70" y="215" text-anchor="middle" font-family="monospace" font-size="9" fill="#8b949e">1</text>
+    <text x="200" y="215" text-anchor="middle" font-family="monospace" font-size="9" fill="#8b949e">50</text>
+    <text x="370" y="215" text-anchor="middle" font-family="monospace" font-size="9" fill="#8b949e">100</text>
+    <text x="530" y="215" text-anchor="middle" font-family="monospace" font-size="9" fill="#8b949e">150</text>
+    <text x="290" y="235" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#8b949e">Position in read (bp)</text>
+    <text x="28" y="130" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#8b949e" transform="rotate(-90,28,130)">Quality score</text>
+  </svg>
+  <figcaption>Per-base quality scores: green = excellent. A slight drop at the 3' end is normal and expected.</figcaption>
+</div>
+
+<table>
+  <tr><th>FastQC Module</th><th>Pass ✅</th><th>Warn/Fail — normal for RNA-seq?</th></tr>
+  <tr><td>Per Base Sequence Quality</td><td>Q &gt; 28 across most positions</td><td>Slight drop at 3' end is normal</td></tr>
+  <tr><td>Per Sequence Quality</td><td>Peak at Q30+</td><td>Low peak = poor run</td></tr>
+  <tr><td>Per Base Sequence Content</td><td>~25% each A, T, G, C</td><td>⚠️ Warning is <strong>normal for RNA-seq</strong> — first ~10 bp are biased</td></tr>
+  <tr><td>Sequence Duplication</td><td>&lt;50% duplicated</td><td>⚠️ Warning common in RNA-seq — highly expressed genes duplicate more</td></tr>
+  <tr><td>Overrepresented Sequences</td><td>No hits</td><td>❌ Fail = adapter contamination → trim before alignment</td></tr>
+  <tr><td>Adapter Content</td><td>Near zero</td><td>❌ Fail = adapter present → trimming required</td></tr>
+</table>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="res-alignment">Understanding Results: Alignment Statistics</h2>
+
+<p>After STAR alignment, check <code>Log.final.out</code> for each sample. This file tells you how many reads aligned and where.</p>
+
+<table>
+  <tr><th>Metric</th><th>Good value</th><th>Problem if…</th></tr>
+  <tr><td>Uniquely mapped reads %</td><td>≥ 85%</td><td>&lt; 70% — wrong genome? wrong organism?</td></tr>
+  <tr><td>Multi-mapped reads %</td><td>&lt; 10%</td><td>&gt; 20% — repetitive transcriptome, short reads</td></tr>
+  <tr><td>Unmapped: too short %</td><td>&lt; 5%</td><td>&gt; 20% — trimming too aggressive, or wrong genome</td></tr>
+  <tr><td>Unmapped: other %</td><td>&lt; 2%</td><td>&gt; 10% — contamination, wrong organism</td></tr>
+</table>
+
+<div class="callout warn">
+  <div class="callout-icon">⚠️</div>
+  <div class="callout-body">
+    <div class="callout-title">Low alignment rate (&lt;70%)? Most common causes:</div>
+    <div class="callout-text">
+      1. <strong>Wrong genome build</strong> — make sure genome and GTF versions match (e.g., both GRCh38)<br>
+      2. <strong>Wrong organism</strong> — verify your sample came from the organism you expect<br>
+      3. <strong>rRNA contamination</strong> — ribosomal RNA wasn't depleted; many reads map to rDNA loci<br>
+      4. <strong>Over-trimming</strong> — reads too short after trimming to align uniquely
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="res-counts">Understanding Results: Count Matrix</h2>
+
+<p>The count matrix from featureCounts should show a reasonable distribution across samples. Check the "Assigned" percentage in featureCounts output — this should be &gt;60% for strand-specific libraries and &gt;50% for unstranded.</p>
+
+<div class="callout error">
+  <div class="callout-icon">❌</div>
+  <div class="callout-body">
+    <div class="callout-title">Assigned reads &lt;30%? Almost certainly wrong strandedness.</div>
+    <div class="callout-text">
+      Re-run featureCounts with a different <code>-s</code> value:<br>
+      <code>-s 0</code> = unstranded<br>
+      <code>-s 1</code> = stranded (forward)<br>
+      <code>-s 2</code> = reverse stranded (most common)<br><br>
+      The correct setting will jump assignment to &gt;60%.
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="res-pca">Understanding Results: PCA Plot</h2>
+
+<p>Principal Component Analysis (PCA) shows how similar your samples are to each other. Each dot is one sample. Samples of the same condition should cluster together.</p>
+
+<div class="diagram">
+  <svg width="420" height="280" viewBox="0 0 420 280" style="max-width:100%;">
+    <rect x="10" y="10" width="400" height="260" rx="8" fill="#fafbfc" stroke="#e2e8f0" stroke-width="1.5"/>
+    <!-- Axes -->
+    <line x1="60" y1="240" x2="390" y2="240" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="60" y1="30" x2="60" y2="240" stroke="#94a3b8" stroke-width="1"/>
+    <!-- Labels -->
+    <text x="225" y="265" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#64748b">PC1 (52% variance)</text>
+    <text x="25" y="135" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#64748b" transform="rotate(-90,25,135)">PC2 (21%)</text>
+    <!-- Control group cluster -->
+    <circle cx="140" cy="100" r="14" fill="#3b82f6" opacity="0.8"/>
+    <circle cx="155" cy="115" r="14" fill="#3b82f6" opacity="0.8"/>
+    <circle cx="130" cy="120" r="14" fill="#3b82f6" opacity="0.8"/>
+    <text x="145" y="80" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#1e40af">Control</text>
+    <!-- Treatment group cluster -->
+    <circle cx="290" cy="130" r="14" fill="#ef4444" opacity="0.8"/>
+    <circle cx="305" cy="110" r="14" fill="#ef4444" opacity="0.8"/>
+    <circle cx="280" cy="115" r="14" fill="#ef4444" opacity="0.8"/>
+    <text x="295" y="90" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#b91c1c">Treatment</text>
+    <!-- Good label -->
+    <rect x="280" y="195" width="110" height="30" rx="6" fill="#f0fdf4" stroke="#bbf7d0"/>
+    <text x="335" y="214" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#15803d" font-weight="600">✓ Good separation</text>
+  </svg>
+  <figcaption>Good PCA: conditions cluster separately, replicates cluster together. PC1 captures most of the variance.</figcaption>
+</div>
+
+<table>
+  <tr><th>What you see</th><th>What it means</th></tr>
+  <tr><td>Conditions cluster separately</td><td>Strong biological signal — your experiment worked</td></tr>
+  <tr><td>Replicates cluster tightly</td><td>Low technical variation — high quality data</td></tr>
+  <tr><td>One replicate far from its group</td><td>Possible outlier — investigate that sample (check QC, alignment stats)</td></tr>
+  <tr><td>All samples mix together</td><td>No separation — biological effect is subtle or absent</td></tr>
+  <tr><td>Samples cluster by sequencing date not condition</td><td>Batch effect — use batch correction before DESeq2</td></tr>
+</table>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="res-volcano">Understanding Results: Volcano Plot</h2>
+
+<p>A volcano plot shows all genes with their fold change (x-axis) and statistical significance (y-axis). Significant DEGs are in the upper left (down-regulated) and upper right (up-regulated) corners.</p>
+
+<div class="diagram">
+  <svg width="420" height="280" viewBox="0 0 420 280" style="max-width:100%;">
+    <rect x="10" y="10" width="400" height="260" rx="8" fill="#fafbfc" stroke="#e2e8f0" stroke-width="1.5"/>
+    <!-- Axes -->
+    <line x1="210" y1="30" x2="210" y2="240" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4"/>
+    <line x1="60" y1="240" x2="390" y2="240" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="60" y1="30" x2="60" y2="240" stroke="#94a3b8" stroke-width="1"/>
+    <!-- Threshold lines -->
+    <line x1="60" y1="120" x2="390" y2="120" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4"/>
+    <line x1="140" y1="30" x2="140" y2="240" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="280" y1="30" x2="280" y2="240" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3"/>
+    <!-- Dots — not significant (grey) -->
+    <circle cx="160" cy="180" r="3" fill="#94a3b8" opacity="0.5"/>
+    <circle cx="200" cy="190" r="3" fill="#94a3b8" opacity="0.5"/>
+    <circle cx="220" cy="175" r="3" fill="#94a3b8" opacity="0.5"/>
+    <circle cx="185" cy="185" r="3" fill="#94a3b8" opacity="0.5"/>
+    <circle cx="240" cy="180" r="3" fill="#94a3b8" opacity="0.5"/>
+    <circle cx="170" cy="170" r="3" fill="#94a3b8" opacity="0.5"/>
+    <circle cx="250" cy="165" r="3" fill="#94a3b8" opacity="0.5"/>
+    <!-- Dots — up-regulated (red) -->
+    <circle cx="300" cy="60" r="4" fill="#ef4444" opacity="0.85"/>
+    <circle cx="320" cy="45" r="4" fill="#ef4444" opacity="0.85"/>
+    <circle cx="310" cy="80" r="4" fill="#ef4444" opacity="0.85"/>
+    <circle cx="340" cy="55" r="4" fill="#ef4444" opacity="0.85"/>
+    <circle cx="290" cy="90" r="3.5" fill="#ef4444" opacity="0.85"/>
+    <circle cx="355" cy="70" r="4" fill="#ef4444" opacity="0.85"/>
+    <circle cx="330" cy="100" r="3.5" fill="#ef4444" opacity="0.85"/>
+    <!-- Dots — down-regulated (blue) -->
+    <circle cx="110" cy="65" r="4" fill="#3b82f6" opacity="0.85"/>
+    <circle cx="90" cy="50" r="4" fill="#3b82f6" opacity="0.85"/>
+    <circle cx="100" cy="85" r="4" fill="#3b82f6" opacity="0.85"/>
+    <circle cx="80" cy="70" r="4" fill="#3b82f6" opacity="0.85"/>
+    <circle cx="120" cy="95" r="3.5" fill="#3b82f6" opacity="0.85"/>
+    <!-- Labels -->
+    <text x="225" y="265" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#64748b">log2 Fold Change</text>
+    <text x="25" y="135" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#64748b" transform="rotate(-90,25,135)">-log10(padj)</text>
+    <text x="360" y="115" font-family="Inter,sans-serif" font-size="9" fill="#d97706">padj=0.05</text>
+    <text x="80" y="250" font-family="Inter,sans-serif" font-size="9" fill="#94a3b8">LFC=-1</text>
+    <text x="275" y="250" font-family="Inter,sans-serif" font-size="9" fill="#94a3b8">LFC=+1</text>
+    <text x="320" y="38" font-family="Inter,sans-serif" font-size="9" font-weight="600" fill="#ef4444">Up-regulated</text>
+    <text x="72" y="38" font-family="Inter,sans-serif" font-size="9" font-weight="600" fill="#3b82f6">Down-regulated</text>
+  </svg>
+  <figcaption>Volcano plot: red = significantly up-regulated, blue = significantly down-regulated. Grey dots are not significant.</figcaption>
+</div>
+
+<table>
+  <tr><th>Region</th><th>Colour</th><th>Meaning</th></tr>
+  <tr><td>Upper right (high LFC, low padj)</td><td style="color:#dc2626;">Red</td><td>Significantly up-regulated in treatment</td></tr>
+  <tr><td>Upper left (low LFC, low padj)</td><td style="color:#2563eb;">Blue</td><td>Significantly down-regulated in treatment</td></tr>
+  <tr><td>Centre / bottom</td><td style="color:#94a3b8;">Grey</td><td>Not significant — no strong evidence of change</td></tr>
+  <tr><td>Right but low on y-axis</td><td>Any</td><td>High fold change but not significant — too few replicates or high variability</td></tr>
+</table>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="res-heatmap">Understanding Results: Heatmap</h2>
+
+<p>The heatmap shows normalised expression of the top differentially expressed genes across all samples. Each column is a sample, each row is a gene. Samples are clustered hierarchically — similar expression profiles group together.</p>
+
+<div class="callout info">
+  <div class="callout-icon">🔍</div>
+  <div class="callout-body">
+    <div class="callout-title">Reading the heatmap colour scale</div>
+    <div class="callout-text">
+      Values shown are <strong>VST-transformed</strong> (Variance Stabilising Transformation), not raw counts. The colour represents relative expression — <strong>dark red = high expression</strong>, <strong>dark blue = low expression</strong>. You should see blocks of similar colour within the same condition.
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="res-gsea">Understanding Results: GSEA &amp; Pathway Analysis</h2>
+
+<p>GSEA tests whether a defined set of genes (e.g., a GO term or KEGG pathway) is enriched at the top or bottom of your ranked gene list.</p>
+
+<table>
+  <tr><th>Term</th><th>Definition</th></tr>
+  <tr><td><strong>NES</strong> (Normalized Enrichment Score)</td><td>Positive NES = pathway genes tend to be up-regulated. Negative NES = down-regulated.</td></tr>
+  <tr><td><strong>pvalue / p.adjust</strong></td><td>Statistical significance. Use p.adjust &lt; 0.05 as threshold.</td></tr>
+  <tr><td><strong>qvalue</strong></td><td>Alternative FDR estimate. &lt; 0.2 is commonly used for GSEA.</td></tr>
+  <tr><td><strong>setSize</strong></td><td>Number of genes in the pathway. Very small (&lt;5) or very large (&gt;500) sets are less reliable.</td></tr>
+</table>
+
+<!-- ═══ TROUBLESHOOTING ══════════════════════════════════════════════════ -->
+<h2 id="trouble-install">Troubleshooting: Installation Issues</h2>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ "RNAflow is damaged and can't be opened" (macOS)</div>
+  <div class="trouble-a">
+    macOS Gatekeeper is blocking the app because it is not notarized with Apple. Fix it by running in Terminal:<br>
+    <code>xattr -cr /Applications/RNAflow.app</code><br>
+    Then launch RNAflow normally.
+  </div>
+</div>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ The app opens but shows a blank white screen</div>
+  <div class="trouble-a">
+    The HTML file may not have loaded correctly. Try:<br>
+    1. Close and reopen the app<br>
+    2. In the menu bar: View → Reload (Cmd+R on Mac, Ctrl+R on Windows)<br>
+    3. Check that you have not moved the app after extracting it from the ZIP
+  </div>
+</div>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ Windows: "Windows protected your PC" (SmartScreen warning)</div>
+  <div class="trouble-a">
+    Click <strong>"More info"</strong> then <strong>"Run anyway"</strong>. This appears because the installer is not yet signed with a Windows certificate.
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="trouble-conda">Troubleshooting: Conda Problems</h2>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ "conda: command not found" in the system check</div>
+  <div class="trouble-a">
+    Conda is not in your PATH. Possible fixes:<br>
+    1. Restart your Terminal after installing Miniforge<br>
+    2. Run <code>~/miniforge3/bin/conda init zsh</code> (macOS) or <code>~/miniforge3/bin/conda init bash</code> (Linux)<br>
+    3. Restart Terminal again<br>
+    4. Run the system check again
+  </div>
+</div>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ "EnvironmentNotFound: Could not find conda environment: rnaseq"</div>
+  <div class="trouble-a">
+    Create the environment first:<br>
+    <code>conda create -n rnaseq python=3.10 -y</code><br>
+    Then re-run the system check.
+  </div>
+</div>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ Conda install takes forever / hangs on "Solving environment"</div>
+  <div class="trouble-a">
+    The conda solver can be slow. Fix with mamba (fast solver):<br>
+    <code>conda install -n base -c conda-forge mamba -y</code><br>
+    Then RNAflow will use mamba automatically for faster installs.
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="trouble-align">Troubleshooting: Alignment Errors</h2>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ STAR exits with "EXITING because of FATAL ERROR: Genome version is too old"</div>
+  <div class="trouble-a">
+    The STAR version used to build the genome index does not match the STAR version used for alignment. Rebuild the index with the same STAR version:<br>
+    <code>conda activate rnaseq &amp;&amp; STAR --version</code><br>
+    Then re-run Step 5 (Genome Index) to regenerate the index.
+  </div>
+</div>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ Alignment rate &lt;50%</div>
+  <div class="trouble-a">
+    Common causes and fixes:<br>
+    1. <strong>Wrong genome</strong>: confirm FASTA and GTF are from the same organism and build<br>
+    2. <strong>rRNA contamination</strong>: check if FastQC shows rRNA sequences in overrepresented sequences<br>
+    3. <strong>Very short reads (&lt;30 bp)</strong>: adjust <code>--outFilterScoreMinOverLread</code> in STAR settings<br>
+    4. <strong>Wrong read format</strong>: single-end vs paired-end mismatch — check your FASTQ files
+  </div>
+</div>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ "FATAL ERROR: could not open genome files" (STAR)</div>
+  <div class="trouble-a">
+    STAR cannot find the genome index. Check that:<br>
+    1. Step 5 (Genome Index) completed successfully<br>
+    2. The genome index path in your config matches where the index was built<br>
+    3. You have read permissions on the genome folder
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="trouble-deseq">Troubleshooting: R / DESeq2 Errors</h2>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ "there is no package called 'DESeq2'"</div>
+  <div class="trouble-a">
+    Install DESeq2 from Bioconductor in R:<br>
+    <code>if (!require("BiocManager")) install.packages("BiocManager")</code><br>
+    <code>BiocManager::install("DESeq2")</code><br>
+    This needs to be done once. RNAflow provides this command in the DESeq2 step.
+  </div>
+</div>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ "all genes were filtered out" / no results</div>
+  <div class="trouble-a">
+    DESeq2 filters genes with very low counts. This happens if:<br>
+    1. <strong>Wrong strandedness in featureCounts</strong> — most reads were not assigned<br>
+    2. <strong>Too few replicates</strong> — DESeq2 needs at least 2 per condition (3+ recommended)<br>
+    3. <strong>Sample mislabeling</strong> — check your sample metadata matches your count matrix columns
+  </div>
+</div>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ "Error: estimating size factors: every gene contains at least one zero"</div>
+  <div class="trouble-a">
+    Your count matrix has a gene with zero counts in at least one sample in every row. This is rare — check that featureCounts produced a proper matrix (not all zeros). Also verify the GTF and genome build match.
+  </div>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────────── -->
+<h2 id="trouble-mac">Troubleshooting: macOS-Specific Issues</h2>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ "python3: command not found" inside the app</div>
+  <div class="trouble-a">
+    The local server requires Python 3. On macOS 12+, Python 3 is not pre-installed. Fix:<br>
+    <code>conda activate base</code><br>
+    Or install Python via Homebrew: <code>brew install python</code><br>
+    Then restart RNAflow.
+  </div>
+</div>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ The server connection dot stays orange/red</div>
+  <div class="trouble-a">
+    The local Python server failed to start. To diagnose:<br>
+    1. Open the app menu → <strong>Server → Server Status</strong> to see if it is running<br>
+    2. Try <strong>Server → Start Local Server</strong> manually<br>
+    3. If Python is missing, install it as above<br>
+    4. In Copy mode (without the server), you can still use all commands — just paste them in your own Terminal
+  </div>
+</div>
+
+<div class="trouble-item">
+  <div class="trouble-q">⚠️ STAR genome indexing crashes with "out of memory"</div>
+  <div class="trouble-a">
+    Human and mouse genomes require ~32 GB RAM for STAR indexing. If your Mac has less:<br>
+    1. Use <strong>HISAT2</strong> instead — change the aligner in Step ⚙ Configure. HISAT2 only needs 8 GB.<br>
+    2. Or reduce STAR memory by adding <code>--genomeSAindexNbases 11</code> for smaller genomes (yeast etc.)
+  </div>
+</div>
+
+<!-- ═══ FOOTER ══════════════════════════════════════════════════════════ -->
+<div style="margin-top:80px;padding-top:32px;border-top:1px solid var(--border);text-align:center;color:var(--text3);font-size:0.82em;">
+  <p>RNAflow Manual · © 2025 BioInfoCodex · <a href="https://bioinfocodex.com" style="color:var(--blue);">bioinfocodex.com</a></p>
+  <p style="margin-top:6px;"><a href="index.html" style="color:var(--blue);">← Back to Download Page</a></p>
+</div>
+
+</main>
+</div>
+
+<script>
+// Highlight active sidebar link on scroll
+const headings = document.querySelectorAll('h2[id], h3[id]');
+const links = document.querySelectorAll('.sidebar a[href^="#"]');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      links.forEach(l => {
+        l.classList.toggle('active', l.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-60px 0px -70% 0px', threshold: 0 });
+
+headings.forEach(h => observer.observe(h));
+</script>
+</body>
+</html>
