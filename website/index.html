@@ -924,10 +924,54 @@ const FORMSPREE_ID = 'YOUR_FORMSPREE_ID'; // ← REPLACE THIS
 // You can change this anytime. Add multiple codes if needed.
 const VALID_CODES = ['RNAFLOW2025', 'BIOINFO2025', 'RNA-ACCESS-001'];
 
+// ── CONFIG: Access expiration date (50 days from launch: March 25 → May 14, 2026) ──
+const ACCESS_EXPIRY = new Date('2026-05-14T23:59:59');
+
+function isAccessExpired() {
+  return new Date() > ACCESS_EXPIRY;
+}
+
+// Show expiration message if access period is over
+(function checkExpiry() {
+  if (isAccessExpired()) {
+    const dlSection = document.getElementById('download');
+    if (dlSection) {
+      // Hide form/code/downloads and show expired message
+      const formW = document.getElementById('reg-form-wrapper');
+      const codeW = document.getElementById('code-entry-wrapper');
+      const dlArea = document.getElementById('download-area');
+      if (formW) formW.style.display = 'none';
+      if (codeW) codeW.style.display = 'none';
+      if (dlArea) dlArea.style.display = 'none';
+
+      // Create expired banner
+      const expiredDiv = document.createElement('div');
+      expiredDiv.style.cssText = 'max-width:600px;margin:0 auto;text-align:center;padding:48px 32px;background:white;border:1.5px solid #fde68a;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,0.06);';
+      expiredDiv.innerHTML = '<div style="font-size:3em;margin-bottom:16px;">⏰</div>' +
+        '<h3 style="font-family:var(--fh);font-weight:800;font-size:1.5em;margin-bottom:12px;color:var(--text);">Access Period Has Ended</h3>' +
+        '<p style="color:var(--text2);font-size:0.95em;line-height:1.7;max-width:440px;margin:0 auto 20px;">The initial access period for RNAflow has concluded. Thank you for your interest.</p>' +
+        '<p style="color:var(--text2);font-size:0.9em;line-height:1.7;">For future access or licensing inquiries, please contact us at:<br>' +
+        '<a href="mailto:info@bioinfocodex.com" style="color:var(--accent);font-weight:600;">info@bioinfocodex.com</a></p>';
+
+      // Insert after the section subtitle
+      const sub = dlSection.querySelector('.section-sub');
+      if (sub) {
+        sub.insertAdjacentElement('afterend', expiredDiv);
+        sub.style.display = 'none';
+      } else {
+        dlSection.appendChild(expiredDiv);
+      }
+    }
+    // Clear stored access
+    localStorage.removeItem('rnaflow_access');
+  }
+})();
+
 let registeredUserName = '';
 
 async function handleRegistration(e) {
   e.preventDefault();
+  if (isAccessExpired()) { alert('The access period has ended. Please contact info@bioinfocodex.com for inquiries.'); return false; }
   const btn = document.getElementById('reg-submit-btn');
   const btnText = document.getElementById('reg-btn-text');
   const btnLoading = document.getElementById('reg-btn-loading');
@@ -981,6 +1025,7 @@ async function handleRegistration(e) {
 
 function handleCodeEntry(e) {
   e.preventDefault();
+  if (isAccessExpired()) { alert('The access period has ended. Please contact info@bioinfocodex.com for inquiries.'); return false; }
   const code = document.getElementById('access-code').value.trim().toUpperCase();
   const errorDiv = document.getElementById('code-error');
 
@@ -1013,6 +1058,8 @@ function handleCodeEntry(e) {
 
 // Check if user already has access (from previous session)
 (function checkExistingAccess() {
+  if (isAccessExpired()) return; // Don't restore access if period ended
+
   const access = localStorage.getItem('rnaflow_access');
   const reg = localStorage.getItem('rnaflow_registered');
 
