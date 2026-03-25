@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RNAflow — RNA-seq Analysis Pipeline</title>
-<meta name="description" content="Complete RNA-seq analysis pipeline. From raw FASTQ to publication figures. Free desktop app for macOS, Windows and Linux.">
+<meta name="description" content="Complete RNA-seq analysis pipeline. From raw FASTQ to publication figures. Desktop app for macOS, Windows and Linux.">
 <meta property="og:title" content="RNAflow — RNA-seq Analysis Pipeline">
-<meta property="og:description" content="From raw FASTQ to publication figures. Free desktop app for macOS, Windows and Linux.">
+<meta property="og:description" content="From raw FASTQ to publication figures. Desktop app for macOS, Windows and Linux.">
 <meta property="og:url" content="https://rnaflow.bioinfocodex.com">
 <meta property="og:image" content="https://rnaflow.bioinfocodex.com/og-image.png">
 <link rel="canonical" href="https://rnaflow.bioinfocodex.com">
@@ -23,6 +23,7 @@ a { color: inherit; text-decoration: none; }
 /* ── TOKENS ── */
 :root {
   --teal:   #00c896;
+  --accent: #00c896;
   --blue:   #0969da;
   --violet: #7c3aed;
   --text:   #1a1d23;
@@ -31,6 +32,8 @@ a { color: inherit; text-decoration: none; }
   --border: #e5e7eb;
   --bg2:    #f5f7fa;
   --radius: 14px;
+  --fh: 'Inter', sans-serif;
+  --fb: 'Inter', sans-serif;
   --grad:   linear-gradient(135deg, #00c896 0%, #0969da 55%, #7c3aed 100%);
 }
 
@@ -171,6 +174,62 @@ section { padding: 80px 40px; }
   background: #fef3c7; border: 1px solid #fde68a; border-radius: 5px;
   padding: 2px 7px; font-family: 'JetBrains Mono', monospace; font-size: 0.93em;
   display: inline-block; margin: 3px 0;
+}
+
+/* ── REGISTRATION FORM ── */
+.reg-form-wrapper {
+  max-width: 640px; margin: 0 auto;
+}
+.reg-form-card {
+  background: white; border: 1.5px solid var(--border); border-radius: 18px;
+  padding: 36px 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+.reg-form-header { text-align: center; margin-bottom: 28px; }
+.reg-form-icon { font-size: 2.4em; margin-bottom: 10px; }
+.reg-form-title {
+  font-family: var(--fh); font-weight: 800; font-size: 1.5em;
+  letter-spacing: -0.5px; margin-bottom: 8px; color: var(--text);
+}
+.reg-form-sub {
+  font-size: 0.9em; color: var(--text2); line-height: 1.6; max-width: 440px; margin: 0 auto;
+}
+.reg-field {
+  display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px;
+}
+.reg-field label {
+  font-size: 0.82em; font-weight: 600; color: var(--text); letter-spacing: 0.2px;
+}
+.reg-field label .req { color: #dc2626; }
+.reg-field input, .reg-field select, .reg-field textarea {
+  width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+  border-radius: 10px; font-size: 0.9em; font-family: var(--fb);
+  background: #fafbfc; color: var(--text); transition: border-color 0.2s;
+}
+.reg-field input:focus, .reg-field select:focus, .reg-field textarea:focus {
+  outline: none; border-color: var(--accent); background: white;
+  box-shadow: 0 0 0 3px rgba(0,200,150,0.1);
+}
+.reg-field textarea { resize: vertical; min-height: 70px; }
+.reg-field-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+@media(max-width:500px) { .reg-field-row { grid-template-columns: 1fr; } }
+.reg-submit-btn {
+  width: 100%; padding: 14px; border: none; border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--blue) 100%);
+  color: white; font-size: 1em; font-weight: 700; font-family: var(--fh);
+  cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+  margin-top: 8px;
+}
+.reg-submit-btn:hover {
+  transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,200,150,0.3);
+}
+.reg-submit-btn:disabled {
+  opacity: 0.6; cursor: not-allowed; transform: none;
+}
+.reg-privacy {
+  text-align: center; font-size: 0.78em; color: var(--text2);
+  margin-top: 14px; line-height: 1.5;
 }
 
 /* ── DOWNLOAD CARDS ── */
@@ -413,128 +472,234 @@ footer {
   </div>
 </section>
 
-<!-- ── DOWNLOAD ── -->
+<!-- ── DOWNLOAD (Registration-gated) ── -->
 <section id="download">
   <div class="section-label">Download</div>
-  <div class="section-title">Choose Your Platform</div>
-  <p class="section-sub">Requires Python 3.8+ and Conda (Miniforge recommended).</p>
+  <div class="section-title">Get RNAflow</div>
+  <p class="section-sub">Register below to receive your download access code. We'll send it to your email along with setup instructions.</p>
 
-  <!-- macOS Gatekeeper notice -->
-  <div class="gatekeeper-notice">
-    <div class="gk-icon">⚠️</div>
-    <div class="gk-body">
-      <div class="gk-title">macOS users: "RNAflow is damaged and can't be opened"?</div>
-      <div class="gk-text">
-        This happens because RNAflow is not yet notarized with Apple (requires a paid Apple Developer account).
-        It is safe to run. To fix it, open <strong>Terminal</strong> and run:<br>
-        <code>xattr -cr ~/Downloads/RNAflow*.dmg</code><br>
-        Then open the DMG again. Or after dragging to Applications:<br>
-        <code>xattr -cr /Applications/RNAflow.app</code><br>
-        Alternatively: right-click the app → <strong>Open</strong> → click <strong>Open</strong> in the dialog.
+  <!-- ── STEP 1: Registration Form ── -->
+  <div id="reg-form-wrapper" class="reg-form-wrapper">
+    <div class="reg-form-card">
+      <div class="reg-form-header">
+        <div class="reg-form-icon">🔐</div>
+        <h3 class="reg-form-title">Request Access</h3>
+        <p class="reg-form-sub">Fill in your details to receive a download code via email. Your information helps us improve RNAflow and keep you updated.</p>
       </div>
+      <form id="reg-form" onsubmit="return handleRegistration(event)">
+        <div class="reg-field-row">
+          <div class="reg-field">
+            <label for="reg-fname">First Name <span class="req">*</span></label>
+            <input type="text" id="reg-fname" name="first_name" required placeholder="e.g. Sarah">
+          </div>
+          <div class="reg-field">
+            <label for="reg-lname">Last Name <span class="req">*</span></label>
+            <input type="text" id="reg-lname" name="last_name" required placeholder="e.g. Chen">
+          </div>
+        </div>
+        <div class="reg-field">
+          <label for="reg-email">Email Address <span class="req">*</span></label>
+          <input type="email" id="reg-email" name="email" required placeholder="your.name@university.edu">
+        </div>
+        <div class="reg-field">
+          <label for="reg-institution">Institution / Organization <span class="req">*</span></label>
+          <input type="text" id="reg-institution" name="institution" required placeholder="e.g. University of Melbourne">
+        </div>
+        <div class="reg-field-row">
+          <div class="reg-field">
+            <label for="reg-role">Role</label>
+            <select id="reg-role" name="role">
+              <option value="">Select your role...</option>
+              <option value="PhD Student">PhD Student</option>
+              <option value="Postdoc">Postdoctoral Researcher</option>
+              <option value="PI / Professor">PI / Professor</option>
+              <option value="Research Assistant">Research Assistant</option>
+              <option value="Lab Technician">Lab Technician</option>
+              <option value="Bioinformatician">Bioinformatician</option>
+              <option value="Industry Scientist">Industry Scientist</option>
+              <option value="Undergraduate">Undergraduate Student</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="reg-field">
+            <label for="reg-field">Research Area</label>
+            <select id="reg-field" name="research_area">
+              <option value="">Select area...</option>
+              <option value="Genomics">Genomics</option>
+              <option value="Transcriptomics">Transcriptomics / RNA-seq</option>
+              <option value="Cancer Biology">Cancer Biology</option>
+              <option value="Immunology">Immunology</option>
+              <option value="Neuroscience">Neuroscience</option>
+              <option value="Plant Biology">Plant Biology</option>
+              <option value="Microbiology">Microbiology</option>
+              <option value="Developmental Biology">Developmental Biology</option>
+              <option value="Drug Discovery">Drug Discovery</option>
+              <option value="Clinical Research">Clinical Research</option>
+              <option value="Bioinformatics">Bioinformatics / Computational</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="reg-field">
+          <label for="reg-purpose">How will you use RNAflow? <span style="color:var(--text2);font-weight:400;">(optional)</span></label>
+          <textarea id="reg-purpose" name="purpose" rows="3" placeholder="Brief description of your project or use case..."></textarea>
+        </div>
+        <div class="reg-field" style="flex-direction:row;align-items:center;gap:10px;">
+          <input type="checkbox" id="reg-updates" name="updates" checked style="width:auto;margin:0;">
+          <label for="reg-updates" style="margin:0;font-size:0.85em;color:var(--text2);cursor:pointer;">Keep me updated about new features, tutorials, and releases</label>
+        </div>
+        <button type="submit" class="reg-submit-btn" id="reg-submit-btn">
+          <span id="reg-btn-text">Request Access Code</span>
+          <span id="reg-btn-loading" style="display:none;">Sending...</span>
+        </button>
+        <p class="reg-privacy">🔒 Your information is private. We will never share your email with third parties.</p>
+      </form>
     </div>
   </div>
 
-  <div class="dl-grid">
-
-    <!-- macOS Apple Silicon -->
-    <div class="dl-card" id="card-mac-arm">
-      <div class="dl-card-head">
-        <div class="dl-os-icon mac">🍎</div>
-        <div>
-          <div class="dl-os-name">macOS</div>
-          <div class="dl-os-arch">Apple Silicon (M1 / M2 / M3)</div>
+  <!-- ── STEP 2: Enter Access Code ── -->
+  <div id="code-entry-wrapper" class="reg-form-wrapper" style="display:none;">
+    <div class="reg-form-card" style="max-width:500px;">
+      <div class="reg-form-header">
+        <div class="reg-form-icon">📬</div>
+        <h3 class="reg-form-title">Check Your Email</h3>
+        <p class="reg-form-sub">We've sent a download access code to <strong id="sent-email-display"></strong>. Enter it below to access downloads.</p>
+      </div>
+      <form id="code-form" onsubmit="return handleCodeEntry(event)">
+        <div class="reg-field">
+          <label for="access-code">Access Code <span class="req">*</span></label>
+          <input type="text" id="access-code" name="access_code" required placeholder="Enter your access code" style="text-align:center;font-size:1.2em;letter-spacing:3px;font-family:'JetBrains Mono',monospace;">
         </div>
-        <span class="recommended-badge" id="badge-mac-arm" style="display:none;">Detected</span>
-      </div>
-      <div class="dl-formats">
-        <a class="dl-btn primary-dl" id="mac-arm-dmg" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0-arm64.dmg">
-          <span class="dl-btn-icon">⬇</span>
-          <span class="dl-btn-text">Download Installer <span class="dl-btn-ext">.dmg</span></span>
-        </a>
-        <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0-arm64-mac.zip">
-          <span class="dl-btn-icon">📦</span>
-          <span class="dl-btn-text">Download ZIP <span class="dl-btn-ext">.zip</span></span>
-        </a>
-      </div>
-      <p class="dl-note">macOS 11.0+ · Apple Silicon native</p>
+        <div id="code-error" style="display:none;color:#dc2626;font-size:0.85em;text-align:center;margin-bottom:12px;">Invalid code. Please check your email and try again.</div>
+        <button type="submit" class="reg-submit-btn">Unlock Downloads</button>
+        <p class="reg-privacy">Didn't receive the email? Check your spam folder or <a href="#" onclick="document.getElementById('code-entry-wrapper').style.display='none';document.getElementById('reg-form-wrapper').style.display='block';return false;" style="color:var(--accent);text-decoration:underline;">register again</a>.</p>
+      </form>
     </div>
-
-    <!-- macOS Intel -->
-    <div class="dl-card" id="card-mac-x64">
-      <div class="dl-card-head">
-        <div class="dl-os-icon mac">🍎</div>
-        <div>
-          <div class="dl-os-name">macOS</div>
-          <div class="dl-os-arch">Intel (x86_64)</div>
-        </div>
-        <span class="recommended-badge" id="badge-mac-x64" style="display:none;">Detected</span>
-      </div>
-      <div class="dl-formats">
-        <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0.dmg">
-          <span class="dl-btn-icon">⬇</span>
-          <span class="dl-btn-text">Download Installer <span class="dl-btn-ext">.dmg</span></span>
-        </a>
-        <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0-mac.zip">
-          <span class="dl-btn-icon">📦</span>
-          <span class="dl-btn-text">Download ZIP <span class="dl-btn-ext">.zip</span></span>
-        </a>
-      </div>
-      <p class="dl-note">macOS 10.15+ · Intel Mac</p>
-    </div>
-
-    <!-- Windows -->
-    <div class="dl-card" id="card-win">
-      <div class="dl-card-head">
-        <div class="dl-os-icon win">🪟</div>
-        <div>
-          <div class="dl-os-name">Windows</div>
-          <div class="dl-os-arch">64-bit (x86_64)</div>
-        </div>
-        <span class="recommended-badge" id="badge-win" style="display:none;">Detected</span>
-      </div>
-      <div class="dl-formats">
-        <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-Setup-1.0.0.exe">
-          <span class="dl-btn-icon">⬇</span>
-          <span class="dl-btn-text">Download Installer <span class="dl-btn-ext">.exe</span></span>
-        </a>
-        <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0.exe">
-          <span class="dl-btn-icon">💾</span>
-          <span class="dl-btn-text">Portable (no install) <span class="dl-btn-ext">.exe</span></span>
-        </a>
-      </div>
-      <p class="dl-note">Windows 10+ · 64-bit required</p>
-    </div>
-
-    <!-- Linux -->
-    <div class="dl-card" id="card-linux">
-      <div class="dl-card-head">
-        <div class="dl-os-icon linux">🐧</div>
-        <div>
-          <div class="dl-os-name">Linux</div>
-          <div class="dl-os-arch">x86_64</div>
-        </div>
-        <span class="recommended-badge" id="badge-linux" style="display:none;">Detected</span>
-      </div>
-      <div class="dl-formats">
-        <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0.AppImage">
-          <span class="dl-btn-icon">⬇</span>
-          <span class="dl-btn-text">AppImage (universal) <span class="dl-btn-ext">.AppImage</span></span>
-        </a>
-        <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/rnaflow_1.0.0_amd64.deb">
-          <span class="dl-btn-icon">📦</span>
-          <span class="dl-btn-text">Debian / Ubuntu <span class="dl-btn-ext">.deb</span></span>
-        </a>
-        <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/rnaflow-1.0.0.x86_64.rpm">
-          <span class="dl-btn-icon">📦</span>
-          <span class="dl-btn-text">Fedora / RHEL <span class="dl-btn-ext">.rpm</span></span>
-        </a>
-      </div>
-      <p class="dl-note">Ubuntu 20.04+ · Fedora 36+</p>
-    </div>
-
   </div>
 
+  <!-- ── STEP 3: Download Area (hidden until code verified) ── -->
+  <div id="download-area" style="display:none;">
+
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="display:inline-flex;align-items:center;gap:10px;background:#d1fae5;border:1.5px solid #6ee7b7;border-radius:12px;padding:12px 24px;">
+        <span style="font-size:1.3em;">✅</span>
+        <span style="font-weight:600;color:#065f46;font-size:0.95em;">Access granted — welcome, <span id="welcome-name"></span>!</span>
+      </div>
+    </div>
+
+    <p class="section-sub" style="margin-bottom:20px;">Requires Python 3.8+ and Conda (Miniforge recommended).</p>
+
+    <!-- macOS Gatekeeper notice -->
+    <div class="gatekeeper-notice">
+      <div class="gk-icon">⚠️</div>
+      <div class="gk-body">
+        <div class="gk-title">macOS users: "RNAflow is damaged and can't be opened"?</div>
+        <div class="gk-text">
+          This happens because RNAflow is not yet notarized with Apple (requires a paid Apple Developer account).
+          It is safe to run. To fix it, open <strong>Terminal</strong> and run:<br>
+          <code>xattr -cr ~/Downloads/RNAflow*.dmg</code><br>
+          Then open the DMG again. Or after dragging to Applications:<br>
+          <code>xattr -cr /Applications/RNAflow.app</code><br>
+          Alternatively: right-click the app → <strong>Open</strong> → click <strong>Open</strong> in the dialog.
+        </div>
+      </div>
+    </div>
+
+    <div class="dl-grid">
+      <!-- macOS Apple Silicon -->
+      <div class="dl-card" id="card-mac-arm">
+        <div class="dl-card-head">
+          <div class="dl-os-icon mac">🍎</div>
+          <div>
+            <div class="dl-os-name">macOS</div>
+            <div class="dl-os-arch">Apple Silicon (M1 / M2 / M3)</div>
+          </div>
+          <span class="recommended-badge" id="badge-mac-arm" style="display:none;">Detected</span>
+        </div>
+        <div class="dl-formats">
+          <a class="dl-btn primary-dl" id="mac-arm-dmg" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0-arm64.dmg">
+            <span class="dl-btn-icon">⬇</span>
+            <span class="dl-btn-text">Download Installer <span class="dl-btn-ext">.dmg</span></span>
+          </a>
+          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0-arm64-mac.zip">
+            <span class="dl-btn-icon">📦</span>
+            <span class="dl-btn-text">Download ZIP <span class="dl-btn-ext">.zip</span></span>
+          </a>
+        </div>
+        <p class="dl-note">macOS 11.0+ · Apple Silicon native</p>
+      </div>
+      <!-- macOS Intel -->
+      <div class="dl-card" id="card-mac-x64">
+        <div class="dl-card-head">
+          <div class="dl-os-icon mac">🍎</div>
+          <div>
+            <div class="dl-os-name">macOS</div>
+            <div class="dl-os-arch">Intel (x86_64)</div>
+          </div>
+          <span class="recommended-badge" id="badge-mac-x64" style="display:none;">Detected</span>
+        </div>
+        <div class="dl-formats">
+          <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0.dmg">
+            <span class="dl-btn-icon">⬇</span>
+            <span class="dl-btn-text">Download Installer <span class="dl-btn-ext">.dmg</span></span>
+          </a>
+          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0-mac.zip">
+            <span class="dl-btn-icon">📦</span>
+            <span class="dl-btn-text">Download ZIP <span class="dl-btn-ext">.zip</span></span>
+          </a>
+        </div>
+        <p class="dl-note">macOS 10.15+ · Intel Mac</p>
+      </div>
+      <!-- Windows -->
+      <div class="dl-card" id="card-win">
+        <div class="dl-card-head">
+          <div class="dl-os-icon win">🪟</div>
+          <div>
+            <div class="dl-os-name">Windows</div>
+            <div class="dl-os-arch">64-bit (x86_64)</div>
+          </div>
+          <span class="recommended-badge" id="badge-win" style="display:none;">Detected</span>
+        </div>
+        <div class="dl-formats">
+          <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-Setup-1.0.0.exe">
+            <span class="dl-btn-icon">⬇</span>
+            <span class="dl-btn-text">Download Installer <span class="dl-btn-ext">.exe</span></span>
+          </a>
+          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0.exe">
+            <span class="dl-btn-icon">💾</span>
+            <span class="dl-btn-text">Portable (no install) <span class="dl-btn-ext">.exe</span></span>
+          </a>
+        </div>
+        <p class="dl-note">Windows 10+ · 64-bit required</p>
+      </div>
+      <!-- Linux -->
+      <div class="dl-card" id="card-linux">
+        <div class="dl-card-head">
+          <div class="dl-os-icon linux">🐧</div>
+          <div>
+            <div class="dl-os-name">Linux</div>
+            <div class="dl-os-arch">x86_64</div>
+          </div>
+          <span class="recommended-badge" id="badge-linux" style="display:none;">Detected</span>
+        </div>
+        <div class="dl-formats">
+          <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0.AppImage">
+            <span class="dl-btn-icon">⬇</span>
+            <span class="dl-btn-text">AppImage (universal) <span class="dl-btn-ext">.AppImage</span></span>
+          </a>
+          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/rnaflow_1.0.0_amd64.deb">
+            <span class="dl-btn-icon">📦</span>
+            <span class="dl-btn-text">Debian / Ubuntu <span class="dl-btn-ext">.deb</span></span>
+          </a>
+          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/rnaflow-1.0.0.x86_64.rpm">
+            <span class="dl-btn-icon">📦</span>
+            <span class="dl-btn-text">Fedora / RHEL <span class="dl-btn-ext">.rpm</span></span>
+          </a>
+        </div>
+        <p class="dl-note">Ubuntu 20.04+ · Fedora 36+</p>
+      </div>
+    </div>
+  </div>
 
 </section>
 
@@ -742,6 +907,154 @@ footer {
 // ── SCROLL TO DOWNLOAD ──
 function scrollToDownload() {
   document.getElementById('download').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── REGISTRATION & ACCESS CODE SYSTEM ──
+// All registrations are sent to your email via Formspree.
+// You review them and send access codes manually, OR use the auto-code system below.
+
+// ── CONFIG: Set your Formspree endpoint ──
+// 1. Go to https://formspree.io and create a free account
+// 2. Create a new form → copy the form ID (e.g. "xwkgjqpl")
+// 3. Replace the ID below with yours
+const FORMSPREE_ID = 'YOUR_FORMSPREE_ID'; // ← REPLACE THIS
+
+// ── CONFIG: Your master access code(s) ──
+// Users enter this code to unlock downloads. You send it via email after reviewing registrations.
+// You can change this anytime. Add multiple codes if needed.
+const VALID_CODES = ['RNAFLOW2025', 'BIOINFO2025', 'RNA-ACCESS-001'];
+
+let registeredUserName = '';
+
+async function handleRegistration(e) {
+  e.preventDefault();
+  const btn = document.getElementById('reg-submit-btn');
+  const btnText = document.getElementById('reg-btn-text');
+  const btnLoading = document.getElementById('reg-btn-loading');
+
+  btn.disabled = true;
+  btnText.style.display = 'none';
+  btnLoading.style.display = 'inline';
+
+  const form = document.getElementById('reg-form');
+  const formData = new FormData(form);
+  registeredUserName = formData.get('first_name');
+
+  // Add timestamp
+  formData.append('_submitted_at', new Date().toISOString());
+  formData.append('_subject', 'New RNAflow Access Request: ' + formData.get('first_name') + ' ' + formData.get('last_name'));
+
+  try {
+    // Send to Formspree (sends you an email with all form data)
+    if (FORMSPREE_ID !== 'YOUR_FORMSPREE_ID') {
+      await fetch('https://formspree.io/f/' + FORMSPREE_ID, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+      });
+    }
+
+    // Show code entry screen
+    document.getElementById('sent-email-display').textContent = formData.get('email');
+    document.getElementById('reg-form-wrapper').style.display = 'none';
+    document.getElementById('code-entry-wrapper').style.display = 'block';
+
+    // Save registration to localStorage
+    localStorage.setItem('rnaflow_registered', JSON.stringify({
+      name: formData.get('first_name'),
+      email: formData.get('email'),
+      date: new Date().toISOString()
+    }));
+
+  } catch (err) {
+    // Even if Formspree fails, still show code entry (don't block the user)
+    document.getElementById('sent-email-display').textContent = formData.get('email');
+    document.getElementById('reg-form-wrapper').style.display = 'none';
+    document.getElementById('code-entry-wrapper').style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btnText.style.display = 'inline';
+  btnLoading.style.display = 'none';
+  return false;
+}
+
+function handleCodeEntry(e) {
+  e.preventDefault();
+  const code = document.getElementById('access-code').value.trim().toUpperCase();
+  const errorDiv = document.getElementById('code-error');
+
+  if (VALID_CODES.map(c => c.toUpperCase()).includes(code)) {
+    // Code valid — unlock downloads
+    errorDiv.style.display = 'none';
+    document.getElementById('code-entry-wrapper').style.display = 'none';
+    document.getElementById('download-area').style.display = 'block';
+    document.getElementById('welcome-name').textContent = registeredUserName || 'Researcher';
+
+    // Save access state
+    localStorage.setItem('rnaflow_access', JSON.stringify({
+      code: code,
+      granted: new Date().toISOString()
+    }));
+
+    // Re-run OS detection for the now-visible download cards
+    detectOS();
+
+  } else {
+    // Invalid code
+    errorDiv.style.display = 'block';
+    document.getElementById('access-code').style.borderColor = '#dc2626';
+    setTimeout(() => {
+      document.getElementById('access-code').style.borderColor = '';
+    }, 2000);
+  }
+  return false;
+}
+
+// Check if user already has access (from previous session)
+(function checkExistingAccess() {
+  const access = localStorage.getItem('rnaflow_access');
+  const reg = localStorage.getItem('rnaflow_registered');
+
+  if (access && reg) {
+    try {
+      const accessData = JSON.parse(access);
+      const regData = JSON.parse(reg);
+
+      // Verify the stored code is still valid
+      if (VALID_CODES.map(c => c.toUpperCase()).includes(accessData.code.toUpperCase())) {
+        // User already verified — show downloads directly
+        document.getElementById('reg-form-wrapper').style.display = 'none';
+        document.getElementById('code-entry-wrapper').style.display = 'none';
+        document.getElementById('download-area').style.display = 'block';
+        document.getElementById('welcome-name').textContent = regData.name || 'Researcher';
+        registeredUserName = regData.name;
+        detectOS();
+      }
+    } catch(e) {}
+  }
+})();
+
+// OS detection function (callable after downloads revealed)
+function detectOS() {
+  const ua = navigator.userAgent;
+  const platform = navigator.platform || '';
+  const isWin   = /Win/.test(platform) || /Windows/.test(ua);
+  const isMac   = /Mac/.test(platform) && !/(iPhone|iPad|iPod)/.test(ua);
+  const isLinux = /Linux/.test(platform) && !/Android/.test(ua);
+
+  function showBadge(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'inline-block';
+  }
+
+  if (isMac) {
+    showBadge('badge-mac-arm');
+  } else if (isWin) {
+    showBadge('badge-win');
+  } else if (isLinux) {
+    showBadge('badge-linux');
+  }
 }
 </script>
 </body>
