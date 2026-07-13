@@ -12,7 +12,7 @@ const { spawn, exec } = require('child_process');
 
 // ── CONFIG ──────────────────────────────────────────────────────────────
 const APP_NAME    = 'RNAflow';
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '2.0.0';
 const SERVER_PORT = 7788;
 const SERVER_HOST = '127.0.0.1';
 
