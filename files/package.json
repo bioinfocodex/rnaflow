@@ -55,7 +55,12 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "RNAflow"
+      "shortcutName": "RNAflow",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+
+    "portable": {
+      "artifactName": "${productName}-${version}.${ext}"
     },
 
     "win": {
