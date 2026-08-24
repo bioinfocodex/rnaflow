@@ -12,9 +12,16 @@ const { spawn, exec } = require('child_process');
 
 // ── CONFIG ──────────────────────────────────────────────────────────────
 const APP_NAME    = 'RNAflow';
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '3.0.0';
 const SERVER_PORT = 7788;
 const SERVER_HOST = '127.0.0.1';
+
+// v3: the local server now requires an access token. The desktop app mints
+// one, hands it to the server via the environment, and loads the app from the
+// server so the page is same-origin and paired with no user action.
+const crypto = require('crypto');
+const SERVER_TOKEN = crypto.randomBytes(24).toString('base64url');
+const APP_URL = `http://${'127.0.0.1'}:${7788}/?token=${SERVER_TOKEN}`;
 
 let mainWindow   = null;
 let serverProcess = null;
@@ -73,6 +80,7 @@ function startServer() {
     cwd: __dirname,
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: false,
+    env: Object.assign({}, process.env, { RNAFLOW_TOKEN: SERVER_TOKEN }),
   });
 
   serverProcess.stdout.on('data', d => {
@@ -91,6 +99,21 @@ function startServer() {
   serverProcess.on('exit', (code) => {
     serverRunning = false;
     console.log('[server] exited with code', code);
+  });
+}
+
+// Poll /status until the server answers or we give up
+function waitForServer(timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  return new Promise(resolve => {
+    const attempt = () => {
+      const req = http.get(
+        { host: SERVER_HOST, port: SERVER_PORT, path: '/status', timeout: 800 },
+        res => { res.resume(); resolve(res.statusCode === 200); });
+      req.on('error',   () => Date.now() < deadline ? setTimeout(attempt, 300) : resolve(false));
+      req.on('timeout', () => { req.destroy(); });
+    };
+    attempt();
   });
 }
 
@@ -122,15 +145,21 @@ function createWindow() {
     show: false,
   });
 
-  // Load the app HTML file directly
-  mainWindow.loadFile(path.join(__dirname, 'RNAflow_App.html'));
+  // v3: start the server first, then load the page it serves — that page
+  // arrives with the access token already injected, so Run works immediately.
+  startServer();
+  waitForServer(8000).then(up => {
+    if (up) {
+      mainWindow.loadURL(APP_URL);
+    } else {
+      // Server could not start (no Python?) — fall back to the local file.
+      // Copy mode still works; Run mode will ask for a token.
+      mainWindow.loadFile(path.join(__dirname, 'RNAflow_App.html'));
+    }
+  });
 
   // Show when ready to avoid flash
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    // Start server after window is visible
-    setTimeout(startServer, 500);
-  });
+  mainWindow.once('ready-to-show', () => mainWindow.show());
 
   // Open external links in browser, not Electron
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {

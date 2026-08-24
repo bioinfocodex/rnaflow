@@ -1,0 +1,125 @@
+name: Build RNAflow Desktop Installers
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  # ── macOS ─────────────────────────────────────────────────────────────
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build macOS DMG (Intel + Apple Silicon)
+        run: npm run build:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload macOS DMG
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url:  ${{ github.event.release.upload_url }}
+          asset_path:  dist/RNAflow-${{ github.event.release.tag_name }}.dmg
+          asset_name:  RNAflow-${{ github.event.release.tag_name }}-mac.dmg
+          asset_content_type: application/x-apple-diskimage
+
+  # ── Windows ───────────────────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Windows installer
+        run: npm run build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows EXE installer
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url:  ${{ github.event.release.upload_url }}
+          asset_path:  "dist/RNAflow Setup ${{ github.event.release.tag_name }}.exe"
+          asset_name:  RNAflow-${{ github.event.release.tag_name }}-windows-setup.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows portable EXE
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url:  ${{ github.event.release.upload_url }}
+          asset_path:  "dist/RNAflow ${{ github.event.release.tag_name }}.exe"
+          asset_name:  RNAflow-${{ github.event.release.tag_name }}-windows-portable.exe
+          asset_content_type: application/octet-stream
+
+  # ── Linux ─────────────────────────────────────────────────────────────
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Linux packages
+        run: npm run build:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux AppImage
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url:  ${{ github.event.release.upload_url }}
+          asset_path:  dist/RNAflow-${{ github.event.release.tag_name }}.AppImage
+          asset_name:  RNAflow-${{ github.event.release.tag_name }}-linux.AppImage
+          asset_content_type: application/octet-stream
+
+      - name: Upload Linux DEB package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url:  ${{ github.event.release.upload_url }}
+          asset_path:  dist/rnaflow_${{ github.event.release.tag_name }}_amd64.deb
+          asset_name:  RNAflow-${{ github.event.release.tag_name }}-linux.deb
+          asset_content_type: application/octet-stream
