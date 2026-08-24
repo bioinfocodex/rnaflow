@@ -292,6 +292,59 @@ def kill_job(job):
         finish(job, "killed", -1)
 
 
+# ── RESULTS BROWSING SCOPE ────────────────────────────────────────────────
+# /ls and /file only ever reach inside a project folder the app has
+# registered. An authenticated caller can already run shell commands, so this
+# is not the security boundary — the token is — but it keeps a stray path from
+# turning the viewer into a general-purpose file reader.
+HOME       = os.path.realpath(os.path.expanduser("~"))
+scopes     = set()
+scope_lock = threading.Lock()
+
+# Only formats the viewer actually renders. Everything else is refused rather
+# than guessed at, so the browser is never asked to sniff a content type.
+VIEWABLE = {
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+    ".gif": "image/gif", ".svg": "image/svg+xml", ".webp": "image/webp",
+    ".pdf": "application/pdf",
+    ".html": "text/html", ".htm": "text/html",
+    ".csv": "text/plain", ".tsv": "text/plain", ".txt": "text/plain",
+    ".log": "text/plain", ".json": "application/json",
+    ".sf": "text/plain", ".summary": "text/plain",
+}
+MAX_VIEW_BYTES = 40 * 1024 * 1024
+
+
+def add_scope(path):
+    """Register a project folder. Must be a real directory inside $HOME."""
+    real = os.path.realpath(os.path.expanduser(path or ""))
+    if not real.startswith(HOME + os.sep) and real != HOME:
+        return None, "Project folder must be inside your home directory."
+    if not os.path.isdir(real):
+        return None, f"Not a folder: {real}"
+    with scope_lock:
+        scopes.add(real)
+    return real, None
+
+
+def resolve_in_scope(path):
+    """Resolve a request path, refusing anything outside a registered scope.
+
+    realpath() is what defeats both ../ traversal and symlinks pointing out
+    of the project, so the check must happen on the resolved path.
+    """
+    if not path:
+        return None, "No path given."
+    real = os.path.realpath(os.path.expanduser(path))
+    with scope_lock:
+        allowed = list(scopes)
+    if not any(real == root or real.startswith(root + os.sep) for root in allowed):
+        return None, "Path is outside the registered project folder."
+    if any(part.startswith(".") for part in real[len(HOME):].split(os.sep) if part):
+        return None, "Hidden files are not served."
+    return real, None
+
+
 # ── HTTP HANDLER ──────────────────────────────────────────────────────────
 ALLOWED_HOSTS   = {f"127.0.0.1:{PORT}", f"localhost:{PORT}", f"[::1]:{PORT}"}
 ALLOWED_ORIGINS = {f"http://127.0.0.1:{PORT}", f"http://localhost:{PORT}", "null"}
@@ -386,6 +439,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 "conda": CONDA_PATH or "not found", "env": CONDA_ENV,
                 "env_present": ENV_PRESENT,
                 "python": sys.version.split()[0],
+                # Lets the app write absolute paths into files that other
+                # tools read — Nextflow does not expand "~" inside a CSV field.
+                "home": HOME,
                 "authed": self.token_ok(),
             })
             return
@@ -400,6 +456,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
                            for j in jobs.values()]
             listing.sort(key=lambda j: j["started"], reverse=True)
             self.reply(200, {"jobs": listing})
+            return
+
+        if p == "/ls":
+            if not self.guard():
+                return
+            self.list_dir((query.get("path") or [""])[0])
+            return
+
+        if p == "/file":
+            if not self.guard():
+                return
+            self.serve_file((query.get("path") or [""])[0])
             return
 
         if p.startswith("/output/"):
@@ -442,6 +510,85 @@ class Handler(http.server.BaseHTTPRequestHandler):
                       json.dumps(TOKEN) + ";</script>")
         html = html.replace("</head>", inject + "</head>", 1) if inject else html
         self.reply(200, html.encode("utf-8"), ctype="text/html; charset=utf-8")
+
+    # ── RESULTS BROWSING ──────────────────────────────────────────────
+    def list_dir(self, path):
+        real, err = resolve_in_scope(path)
+        if err:
+            self.reply(403, {"error": "out_of_scope", "detail": err}); return
+        if not os.path.isdir(real):
+            self.reply(404, {"error": "not_a_directory", "detail": real}); return
+        entries = []
+        try:
+            for name in sorted(os.listdir(real)):
+                if name.startswith("."):
+                    continue
+                full = os.path.join(real, name)
+                try:
+                    st = os.stat(full)
+                except OSError:
+                    continue
+                is_dir = os.path.isdir(full)
+                ext = os.path.splitext(name)[1].lower()
+                entries.append({
+                    "name": name, "path": full, "dir": is_dir,
+                    "size": 0 if is_dir else st.st_size,
+                    "mtime": st.st_mtime,
+                    "viewable": (not is_dir) and ext in VIEWABLE,
+                    "kind": "dir" if is_dir else VIEWABLE.get(ext, ""),
+                })
+        except OSError as e:
+            self.reply(500, {"error": "read_failed", "detail": str(e)}); return
+        self.reply(200, {"path": real, "entries": entries})
+
+    def serve_file(self, path):
+        real, err = resolve_in_scope(path)
+        if err:
+            self.reply(403, {"error": "out_of_scope", "detail": err}); return
+        if not os.path.isfile(real):
+            self.reply(404, {"error": "not_found", "detail": real}); return
+        ext = os.path.splitext(real)[1].lower()
+        ctype = VIEWABLE.get(ext)
+        if not ctype:
+            self.reply(415, {"error": "not_viewable",
+                             "detail": f"{ext or 'this file type'} is not served by the viewer."})
+            return
+        size = os.path.getsize(real)
+        if size > MAX_VIEW_BYTES:
+            self.reply(413, {"error": "too_large",
+                             "detail": f"{size} bytes — open it outside RNAflow."})
+            return
+        try:
+            with open(real, "rb") as fh:
+                body = fh.read()
+        except OSError as e:
+            self.reply(500, {"error": "read_failed", "detail": str(e)}); return
+
+        self.send_response(200)
+        self.cors()
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        # Never let the browser sniff a different type than we declared.
+        self.send_header("X-Content-Type-Options", "nosniff")
+        # Only HTML can carry script, so only HTML gets the locked-down CSP.
+        # Applying "sandbox" to an image response makes Chrome refuse to
+        # render it, which is why this is not sent for every type.
+        if ctype == "text/html":
+            # No script, no network, no plugins — a report renders, but cannot
+            # call home or touch the app. The "sandbox" CSP *directive* is
+            # deliberately omitted: Chrome refuses the frame load outright
+            # (ERR_BLOCKED_BY_CLIENT), and the iframe's own sandbox attribute
+            # already gives the opaque origin.
+            self.send_header("Content-Security-Policy",
+                             "default-src 'none'; img-src 'self' data: blob:; "
+                             "style-src 'unsafe-inline'; font-src data:; "
+                             "script-src 'none'; frame-ancestors 'self'")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     # ── SSE with replay ───────────────────────────────────────────────
     def stream_output(self, job_id, start):
@@ -489,6 +636,20 @@ class Handler(http.server.BaseHTTPRequestHandler):
     # ── POST ──────────────────────────────────────────────────────────
     def do_POST(self):
         p = self.path.split("?")[0]
+        if p == "/scope":
+            if not self.guard():
+                return
+            length = int(self.headers.get("Content-Length", 0) or 0)
+            try:
+                payload = json.loads(self.rfile.read(length) or b"{}")
+            except Exception:
+                self.reply(400, {"error": "bad_json"}); return
+            real, err = add_scope(payload.get("root"))
+            if err:
+                self.reply(400, {"error": "bad_scope", "detail": err}); return
+            self.reply(200, {"ok": True, "root": real})
+            return
+
         if p != "/run":
             self.reply(404, {"error": "not_found"}); return
         if not self.guard():

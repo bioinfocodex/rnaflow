@@ -981,6 +981,10 @@ p { font-size: 0.86em; color: var(--text2); line-height: 1.6; margin: 6px 0; }
     <div class="nav-num" style="font-size:1.28em;">🔄</div> Batch correction
     <span class="nav-check">○</span>
   </div>
+  <div class="nav-item" onclick="goTo('page-results', this); refreshResults()" id="nav-results" data-nostep="1">
+    <div class="nav-num" style="font-size:1.28em;">📂</div> Results &amp; export
+    <span class="nav-check">○</span>
+  </div>
   <div class="nav-item" onclick="goTo('page-gsea', this)" id="nav-gsea">
     <div class="nav-num" style="font-size:1.28em;">🌐</div> GSEA &amp; pathways
     <span class="nav-check">○</span>
@@ -2807,6 +2811,66 @@ p_upset &lt;- <span class="cf">upsetplot</span>(go_bp, n=<span class="cn">10</sp
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE: RESULTS & EXPORT                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-results">
+  <div class="page-header">
+    <h1>📂 Results &amp; Export <span class="tag tag-green" style="font-size:0.5em;vertical-align:middle;">New in v3</span></h1>
+    <p>Look at what the pipeline produced without leaving RNAflow, and export the whole project as a reproducible workflow.</p>
+  </div>
+
+  <!-- VIEWER -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🖼️</span> Output browser
+      <button class="btn btn-ghost" style="margin-left:auto;font-size:0.78em;padding:4px 12px;" onclick="refreshResults()">↻ Refresh</button>
+    </div>
+    <div class="card-body">
+      <div id="res-status" style="font-size:0.83em;color:var(--text3);line-height:1.6;"></div>
+      <div id="res-folders" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;"></div>
+      <div id="res-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;"></div>
+    </div>
+  </div>
+
+  <!-- NF-CORE EXPORT -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🔬</span> Export to nf-core/rnaseq</div>
+    <div class="card-body">
+      <p style="font-size:0.85em;color:var(--text2);line-height:1.65;margin-bottom:12px;">
+        RNAflow teaches the pipeline one step at a time, which is the right way to learn it and the wrong way to run
+        it fifty times. <strong>nf-core/rnaseq</strong> is the community-standard Nextflow workflow — it resumes after
+        failures, parallelises across samples, and records software versions for your methods section. These two files
+        hand your exact configuration over to it.
+      </p>
+      <div class="alert info" style="margin-bottom:12px;">
+        <span class="alert-icon">💡</span>
+        <div>Install once with <code>conda install -c bioconda nextflow</code>, then run the command below. Nextflow
+        pulls the workflow and containers itself — nothing else to set up.</div>
+      </div>
+
+      <h3>1 — Samplesheet</h3>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">samplesheet.csv</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button><button class="btn btn-ghost" style="font-size:0.72em;padding:3px 10px;margin-left:6px;" onclick="downloadSamplesheet()">⬇ Download</button></div><pre class="code" id="nf-samplesheet">...</pre></div>
+      <div id="nf-sheet-note" style="font-size:0.77em;color:var(--text3);margin-top:6px;"></div>
+
+      <h3 style="margin-top:16px;">2 — Write the samplesheet and launch</h3>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="nf-command">...</pre></div>
+    </div>
+  </div>
+
+  <!-- SHELL SCRIPT BUNDLE -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📜</span> Export as one shell script</div>
+    <div class="card-body">
+      <p style="font-size:0.85em;color:var(--text2);line-height:1.65;margin-bottom:12px;">
+        Prefer to stay with the tools you have just learned? This bundles every generated step, in order, into a single
+        script you can run unattended or attach to a paper as the exact commands used.
+      </p>
+      <button class="btn" onclick="downloadRunAll()" style="background:var(--green);color:#04120a;border:none;font-weight:700;">⬇ Download run_all.sh</button>
+      <span id="runall-note" style="font-size:0.78em;color:var(--text3);margin-left:10px;"></span>
+    </div>
+  </div>
+</div>
+
 
 </div><!-- end main -->
 </div><!-- end app-body -->
@@ -2880,7 +2944,7 @@ function goTo(pageId, navEl) {
 const doneSteps = new Set();
 // Derived from the sidebar instead of hardcoded — it used to say 13 while the
 // sidebar had 15 entries, so a finished project displayed "15 / 13".
-const TOTAL_STEPS = document.querySelectorAll('.nav-item').length || 15;
+const TOTAL_STEPS = document.querySelectorAll('.nav-item:not([data-nostep])').length || 15;
 
 function renderProgress() {
   const n   = doneSteps.size;
@@ -3636,6 +3700,7 @@ function updateAll() {
   set('cmd-pca', pc);
 
   syncAdvancedPages(base, ctrl, treat, cSamp.length, tSamp.length, orgKey);
+  updateExports();
 
   saveConfig();
 }
@@ -4266,6 +4331,7 @@ const SERVER = (location.protocol === 'http:' && location.port === '7788')
   : "http://127.0.0.1:7788";
 let connected = false;
 let serverUp  = false;   // reachable, but perhaps not paired yet
+let serverHome = '';     // real home path, so generated files can be absolute
 
 // ── ACCESS TOKEN (v3) ─────────────────────────────────────────────────────
 // The server no longer accepts commands from anyone who can reach the port.
@@ -4354,6 +4420,7 @@ async function checkServer() {
     if (!r.ok) { serverUp = false; setConnected(false); return; }
     const s = await r.json();
     serverUp = true;
+    serverHome = s.home || serverHome;
     setConnected(!!s.authed);
 
     // Tell the user up front that the conda env is missing, rather than
@@ -4639,6 +4706,371 @@ async function resumeJobs() {
       stepId: info.step, nextInfo: info.next, preId
     });
   });
+}
+
+// ── NF-CORE / SCRIPT EXPORT (v3) ──────────────────────────────────────────
+// RNAflow is a teaching tool; nf-core/rnaseq is what you want once the design
+// is settled. Exporting the config means the two do not have to be re-entered.
+function nfStrandedness() {
+  // nf-core wording, mapped from the featureCounts -s value used elsewhere
+  return { '0': 'unstranded', '1': 'forward', '2': 'reverse' }[val('cfg-strand', '0')] || 'auto';
+}
+
+// Nextflow does not expand "~" inside a samplesheet field, so paths handed to
+// another tool must be absolute. The server reports the real home path.
+function absPath(p) {
+  if (!p.startsWith('~')) return p;
+  return serverHome ? serverHome + p.slice(1) : p;
+}
+
+function buildSamplesheet() {
+  const base   = document.getElementById('folder-preview-text')?.textContent || '';
+  const paired = val('cfg-readtype', 'single') === 'paired';
+  const isLocal = val('cfg-datasource', 'sra') === 'local';
+  const raw    = rawDir(base);
+  const ext    = fqExt();
+  const strand = nfStrandedness();
+  const ctrl   = getSamples('ctrl-rows');
+  const treat  = getSamples('treat-rows');
+
+  const rows = ['sample,fastq_1,fastq_2,strandedness'];
+  const rawAbs = absPath(raw);
+  const add = s => {
+    const f1 = paired ? `${rawAbs}/${s}_1${ext}` : `${rawAbs}/${s}${ext}`;
+    const f2 = paired ? `${rawAbs}/${s}_2${ext}` : '';
+    rows.push(`${s},${f1},${f2},${strand}`);
+  };
+  ctrl.forEach(add);
+  treat.forEach(add);
+  return { csv: rows.join('\n'), n: ctrl.length + treat.length, isLocal, strand, base };
+}
+
+function updateExports() {
+  const sheet = buildSamplesheet();
+  set('nf-samplesheet', sheet.csv);
+
+  const note = document.getElementById('nf-sheet-note');
+  if (note) {
+    const bits = [`${sheet.n} samples · strandedness <code>${sheet.strand}</code>.`];
+    if (!sheet.isLocal) {
+      bits.push('Your data source is SRA, so these paths only exist after the download step. ' +
+                'nf-core can also fetch from SRA itself with <code>nf-core/fetchngs</code>.');
+    }
+    if (!serverHome && sheet.csv.includes('~/')) {
+      bits.push('⚠️ Start the local server so RNAflow can resolve <code>~</code> to a real path — ' +
+                'Nextflow does not expand it inside a samplesheet.');
+    }
+    if (sheet.strand === 'unstranded') {
+      bits.push('“Unstranded” is RNAflow’s default — if you are unsure, use <code>auto</code> and let the workflow detect it.');
+    }
+    note.innerHTML = bits.join(' ');
+  }
+
+  const base   = sheet.base;
+  const org    = val('cfg-org-tag', 'organism');
+  const gUrl   = val('cfg-genome-url', '');
+  const gtfUrl = val('cfg-gtf-url', '');
+  const T      = threads();
+  const salmon = val('cfg-method', 'align') === 'salmon';
+
+  // Flags verified against the nf-core/rnaseq 3.26.0 schema. Note that
+  // --max_cpus was removed from nf-core; resource ceilings now go through
+  // Nextflow's resourceLimits, and passing the old flag fails validation.
+  const NF_VERSION = '3.26.0';
+  const route = salmon
+    ? '  --pseudo_aligner salmon --skip_alignment \\\n'   // no genome index, matches RNAflow's Salmon route
+    : '  --aligner hisat2 \\\n';                          // matches HISAT2 + featureCounts
+
+  const baseAbs = absPath(base);
+  let cmd = `# 1. Samplesheet (or use the Download button above)\n`;
+  cmd += `mkdir -p ${baseAbs}/nfcore\ncat > ${baseAbs}/nfcore/samplesheet.csv <<'CSV'\n${sheet.csv}\nCSV\n\n`;
+  cmd += `# 2. Cap the resources Nextflow may ask for on this machine\n`;
+  cmd += `cat > ${baseAbs}/nfcore/resources.config <<'CFG'\n`;
+  cmd += `process.resourceLimits = [ cpus: ${T}, memory: '${Math.max(8, parseInt(T) * 4)}.GB', time: '48.h' ]\n`;
+  cmd += `CFG\n\n`;
+  cmd += `# 3. Run it. -resume makes a repeat run pick up where it stopped.\n`;
+  cmd += `nextflow run nf-core/rnaseq -r ${NF_VERSION} \\\n`;
+  cmd += `  --input ${baseAbs}/nfcore/samplesheet.csv \\\n`;
+  cmd += `  --outdir ${baseAbs}/nfcore/results \\\n`;
+  cmd += `  --fasta "${gUrl}" \\\n`;
+  cmd += `  --gtf "${gtfUrl}" \\\n`;
+  cmd += route;
+  cmd += `  -c ${baseAbs}/nfcore/resources.config \\\n`;
+  cmd += `  -profile docker \\\n`;
+  cmd += `  -resume\n\n`;
+  cmd += `# No Docker? swap -profile docker for singularity, or conda.\n`;
+  cmd += `# nf-core builds its own index from the FASTA/GTF above, so RNAflow's\n`;
+  cmd += `# genome and index steps are not needed for this route.`;
+  set('nf-command', cmd);
+
+  const rnote = document.getElementById('runall-note');
+  if (rnote) rnote.textContent = `${sheet.n} samples · ${salmon ? 'Salmon' : 'HISAT2'} route · ${T} threads`;
+}
+
+function saveTextFile(name, text, mime) {
+  const blob = new Blob([text], { type: mime || 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+function downloadSamplesheet() {
+  saveTextFile('samplesheet.csv', buildSamplesheet().csv + '\n', 'text/csv');
+}
+
+// Every generated bash step, in order, as one script
+const RUNALL_STEPS = [
+  ['Create the project folders',        'cmd-mkdir'],
+  ['Check the reference URLs resolve',  'cmd-check-urls'],
+  ['Download raw data',                 'cmd-download'],
+  ['Quality control',                   'cmd-fastqc'],
+  ['Aggregate QC reports',              'cmd-multiqc'],
+  ['Trim reads',                        'cmd-trim'],
+  ['Download genome / transcriptome',   'cmd-genome'],
+  ['Build the index',                   'cmd-index'],
+  ['Align / quantify',                  'cmd-align'],
+  ['Post-alignment checks',             'cmd-bam'],
+  ['Count reads per gene',              'cmd-counts'],
+];
+
+function downloadRunAll() {
+  const base   = document.getElementById('folder-preview-text')?.textContent || '';
+  const salmon = val('cfg-method', 'align') === 'salmon';
+  const stamp  = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+  let sh = `#!/usr/bin/env bash\n`;
+  sh += `# ─────────────────────────────────────────────────────────────────\n`;
+  sh += `# RNAflow v3 — generated ${stamp}\n`;
+  sh += `# Project : ${base}\n`;
+  sh += `# Route   : ${salmon ? 'Salmon (transcriptome)' : 'HISAT2 + featureCounts (genome)'}\n`;
+  sh += `#\n`;
+  sh += `# Runs every command RNAflow generated, in order. The R analysis is\n`;
+  sh += `# deliberately not included — read the QC and PCA before running it.\n`;
+  sh += `# ─────────────────────────────────────────────────────────────────\n`;
+  sh += `set -euo pipefail\n\n`;
+  sh += `# Stop at the first failure rather than carrying on with bad inputs.\n`;
+  sh += `# Re-running is safe: finished steps simply redo their work.\n\n`;
+  sh += `source "$(conda info --base)/etc/profile.d/conda.sh"\n`;
+  sh += `conda activate rnaseq\n\n`;
+
+  RUNALL_STEPS.forEach(([label, id], i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const body = el.textContent.trim();
+    if (!body || body === '...') return;
+    sh += `# ── ${i + 1}. ${label} ${'─'.repeat(Math.max(2, 52 - label.length))}\n`;
+    sh += `echo "[$(date +%H:%M:%S)] ${label}"\n`;
+    sh += body + '\n\n';
+  });
+
+  sh += `echo\necho "Pipeline finished. Next: open the QC report, then run the R analysis."\n`;
+  saveTextFile('run_all.sh', sh, 'text/x-shellscript');
+}
+
+// ── RESULTS VIEWER (v3) ───────────────────────────────────────────────────
+// Reads outputs back through the local server so plots and reports can be
+// looked at in place, instead of "go find the PNG in Finder".
+let resCurrentDir = '';
+
+function resSay(html, colour) {
+  const el = document.getElementById('res-status');
+  if (el) { el.innerHTML = html; el.style.color = colour || 'var(--text3)'; }
+}
+
+function fileUrl(path) {
+  return authUrl('/file', { path });
+}
+
+async function refreshResults() {
+  const base = document.getElementById('folder-preview-text')?.textContent || '';
+  const grid = document.getElementById('res-grid');
+  const bar  = document.getElementById('res-folders');
+  if (grid) grid.innerHTML = '';
+  if (bar)  bar.innerHTML  = '';
+
+  if (!connected) {
+    resSay(serverUp
+      ? '🔑 Paste the server access token to browse results.'
+      : 'The viewer reads files through the local server. Start it with <code>python3 rnaflow_server.py</code>, then refresh.',
+      'var(--orange)');
+    return;
+  }
+
+  resSay('Looking for outputs…');
+  try {
+    // Register the project folder once; the server refuses paths outside it
+    const reg = await fetch(`${SERVER}/scope`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ root: base })
+    });
+    if (!reg.ok) {
+      const e = await reg.json().catch(() => ({}));
+      resSay(`❌ ${e.detail || 'Could not open that project folder.'}<br>` +
+             `<span style="color:var(--text3)">Expected at <code>${base}</code> — has the pipeline run yet?</span>`,
+             'var(--red)');
+      return;
+    }
+    const root = (await reg.json()).root;
+
+    // Offer the folders that actually exist
+    const top = await resList(root);
+    const dirs = top.entries.filter(e => e.dir).map(e => e.name);
+    const preferred = ['results', 'qc', 'counts', 'aligned', 'trimmed', 'logs']
+      .filter(d => dirs.includes(d));
+    const rest = dirs.filter(d => !preferred.includes(d));
+    [...preferred, ...rest].forEach(name => {
+      const b = document.createElement('button');
+      b.className = 'btn btn-ghost';
+      b.style.cssText = 'font-size:0.78em;padding:4px 12px;';
+      b.textContent = name;
+      b.onclick = () => showResultsDir(`${root}/${name}`, b);
+      bar.appendChild(b);
+    });
+
+    const first = preferred[0] || rest[0];
+    if (!first) {
+      resSay(`Project folder found, but it has no subfolders yet — run the pipeline first.`, 'var(--text3)');
+      return;
+    }
+    showResultsDir(`${root}/${first}`, bar.querySelector('button'));
+  } catch (e) {
+    resSay('❌ ' + e.message, 'var(--red)');
+  }
+}
+
+async function resList(path) {
+  const r = await fetch(authUrl('/ls', { path }), { headers: authHeaders() });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.detail || `Could not list ${path}`);
+  }
+  return r.json();
+}
+
+function humanSize(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n / 1024).toFixed(0) + ' KB';
+  if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+  return (n / 1073741824).toFixed(1) + ' GB';
+}
+
+async function showResultsDir(path, btn) {
+  resCurrentDir = path;
+  document.querySelectorAll('#res-folders button').forEach(b => b.style.borderColor = '');
+  if (btn) btn.style.borderColor = 'var(--green)';
+
+  const grid = document.getElementById('res-grid');
+  grid.innerHTML = '';
+  let listing;
+  try { listing = await resList(path); }
+  catch (e) { resSay('❌ ' + e.message, 'var(--red)'); return; }
+
+  const files = listing.entries.filter(e => !e.dir);
+  if (!files.length) {
+    resSay(`Nothing in <code>${path}</code> yet.`, 'var(--text3)');
+    return;
+  }
+  resSay(`${files.length} file${files.length !== 1 ? 's' : ''} in <code>${path}</code>`, 'var(--text2)');
+
+  files.forEach(f => grid.appendChild(resultCard(f)));
+}
+
+function resultCard(f) {
+  const card = document.createElement('div');
+  card.style.cssText = 'border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--bg2);';
+
+  const head = document.createElement('div');
+  head.style.cssText = 'padding:8px 10px;font-size:0.78em;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);';
+  head.innerHTML = `<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);">${f.name}</span>
+                    <span style="color:var(--text3);white-space:nowrap;">${humanSize(f.size)}</span>`;
+  card.appendChild(head);
+
+  const body = document.createElement('div');
+  body.style.cssText = 'padding:10px;min-height:60px;';
+
+  if (!f.viewable) {
+    body.innerHTML = `<div style="font-size:0.78em;color:var(--text3);">Not previewable here — open it from your file manager.</div>`;
+  } else if (f.kind.startsWith('image/')) {
+    const img = document.createElement('img');
+    img.src = fileUrl(f.path);
+    img.style.cssText = 'width:100%;height:auto;border-radius:6px;background:#fff;cursor:zoom-in;';
+    img.loading = 'lazy';
+    img.onclick = () => openResultFull(f);
+    img.onerror = () => { body.innerHTML = '<div style="font-size:0.78em;color:var(--red)">Could not load image.</div>'; };
+    body.appendChild(img);
+  } else if (f.kind === 'text/html') {
+    const b = document.createElement('button');
+    b.className = 'btn btn-ghost';
+    b.style.cssText = 'font-size:0.78em;width:100%;';
+    b.textContent = '⬈ Open report';
+    b.onclick = () => openResultFull(f);
+    body.appendChild(b);
+  } else if (f.kind === 'application/pdf') {
+    const b = document.createElement('button');
+    b.className = 'btn btn-ghost';
+    b.style.cssText = 'font-size:0.78em;width:100%;';
+    b.textContent = '⬈ Open PDF';
+    b.onclick = () => openResultFull(f);
+    body.appendChild(b);
+  } else {
+    const pre = document.createElement('pre');
+    pre.style.cssText = 'margin:0;font-size:0.68em;max-height:150px;overflow:auto;color:var(--text2);white-space:pre;';
+    pre.textContent = 'loading…';
+    fetch(fileUrl(f.path), { headers: authHeaders() })
+      .then(r => r.text())
+      .then(t => { pre.textContent = t.split('\n').slice(0, 12).join('\n'); })
+      .catch(() => { pre.textContent = '(could not read)'; });
+    body.appendChild(pre);
+  }
+
+  card.appendChild(body);
+  return card;
+}
+
+// Reports are built from tool output and file names, so they are treated as
+// untrusted: shown in a sandboxed iframe that cannot reach this page or its
+// stored token, on top of the server's own CSP.
+function openResultFull(f) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:9999;display:flex;flex-direction:column;padding:24px;';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+
+  const bar = document.createElement('div');
+  bar.style.cssText = 'display:flex;gap:12px;align-items:center;color:#fff;font-size:0.85em;margin-bottom:10px;font-family:var(--mono);';
+  bar.innerHTML = `<span style="flex:1;">${f.name}</span>`;
+  const close = document.createElement('button');
+  close.className = 'btn btn-ghost';
+  close.style.cssText = 'font-size:0.8em;color:#fff;border-color:#666;';
+  close.textContent = '✕ Close';
+  close.onclick = () => overlay.remove();
+  bar.appendChild(close);
+  overlay.appendChild(bar);
+
+  if (f.kind.startsWith('image/')) {
+    const img = document.createElement('img');
+    img.src = fileUrl(f.path);
+    img.style.cssText = 'flex:1;min-height:0;object-fit:contain;background:#fff;border-radius:8px;';
+    overlay.appendChild(img);
+  } else {
+    const frame = document.createElement('iframe');
+    frame.src = fileUrl(f.path);
+    // allow-same-origin, but deliberately NOT allow-scripts: with no script
+    // execution the same-origin grant is inert (nothing can read localStorage),
+    // and the server also sends script-src 'none'. A fully opaque sandbox is
+    // not usable here — Chrome's Private Network Access rules block an
+    // opaque-origin frame from loading over 127.0.0.1 at all.
+    frame.setAttribute('sandbox', 'allow-same-origin')
+    frame.style.cssText = 'flex:1;min-height:0;border:none;border-radius:8px;background:#fff;';
+    overlay.appendChild(frame);
+  }
+
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', esc); }
+  });
+  document.body.appendChild(overlay);
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
