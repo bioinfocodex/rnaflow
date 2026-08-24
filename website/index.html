@@ -438,7 +438,7 @@ footer {
 
 <!-- ── HERO ── -->
 <section class="hero">
-  <div class="hero-badge"><span class="dot"></span> Version 1.0.0 · RNA-seq Made Simple</div>
+  <div class="hero-badge"><span class="dot"></span> Version 3.0 · RNA-seq Made Simple</div>
   <h1>RNA-seq Analysis<br><span class="grad">Made Simple</span></h1>
   <p class="hero-sub">Complete pipeline from raw FASTQ files to publication-ready figures. No command-line experience required.</p>
 
@@ -605,6 +605,38 @@ footer {
       </div>
     </div>
 
+    <!-- Standalone (browser) — the v3 route, no installer -->
+    <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:14px;padding:22px;margin-bottom:22px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
+        <span style="font-size:1.5em;">🧬</span>
+        <div>
+          <div style="font-weight:700;color:#065f46;font-size:1.05em;">Standalone app &mdash; version 3.0</div>
+          <div style="font-size:0.85em;color:#047857;">Two files, no installer, no Gatekeeper warnings. Runs in your browser.</div>
+        </div>
+        <span style="margin-left:auto;background:#065f46;color:#fff;font-size:0.72em;font-weight:700;padding:4px 10px;border-radius:999px;">NEWEST</span>
+      </div>
+      <div style="font-size:0.87em;color:#065f46;line-height:1.7;margin-bottom:14px;">
+        New in v3: import samples straight from a GEO/SRA accession, a Salmon route that skips genome indexing,
+        an in-app results viewer, and export to nf-core/rnaseq. Download both files into the same folder.
+      </div>
+      <div class="dl-formats" style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a class="dl-btn primary-dl" href="RNAflow_App.html" download>
+          <span class="dl-btn-icon">⬇</span>
+          <span class="dl-btn-text">RNAflow App <span class="dl-btn-ext">.html</span></span>
+        </a>
+        <a class="dl-btn" href="rnaflow_server.py" download>
+          <span class="dl-btn-icon">⬇</span>
+          <span class="dl-btn-text">Local server <span class="dl-btn-ext">.py</span></span>
+        </a>
+      </div>
+      <div style="font-size:0.8em;color:#047857;margin-top:12px;line-height:1.6;">
+        Open <code>RNAflow_App.html</code> to browse and copy commands. To run them from the app,
+        start the server with <code>python3 rnaflow_server.py</code> and open the URL it prints.
+      </div>
+    </div>
+
+    <div style="font-size:0.86em;color:#64748b;margin-bottom:12px;">Or install the desktop app (version 2.0.0):</div>
+
     <div class="dl-grid">
       <!-- macOS Apple Silicon -->
       <div class="dl-card" id="card-mac-arm">
@@ -617,11 +649,11 @@ footer {
           <span class="recommended-badge" id="badge-mac-arm" style="display:none;">Detected</span>
         </div>
         <div class="dl-formats">
-          <a class="dl-btn primary-dl" id="mac-arm-dmg" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0-arm64.dmg">
+          <a class="dl-btn primary-dl" id="mac-arm-dmg" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-2.0.0-arm64.dmg">
             <span class="dl-btn-icon">⬇</span>
             <span class="dl-btn-text">Download Installer <span class="dl-btn-ext">.dmg</span></span>
           </a>
-          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0-arm64-mac.zip">
+          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-2.0.0-arm64-mac.zip">
             <span class="dl-btn-icon">📦</span>
             <span class="dl-btn-text">Download ZIP <span class="dl-btn-ext">.zip</span></span>
           </a>
@@ -639,11 +671,11 @@ footer {
           <span class="recommended-badge" id="badge-mac-x64" style="display:none;">Detected</span>
         </div>
         <div class="dl-formats">
-          <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0.dmg">
+          <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-2.0.0.dmg">
             <span class="dl-btn-icon">⬇</span>
             <span class="dl-btn-text">Download Installer <span class="dl-btn-ext">.dmg</span></span>
           </a>
-          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0-mac.zip">
+          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-2.0.0-mac.zip">
             <span class="dl-btn-icon">📦</span>
             <span class="dl-btn-text">Download ZIP <span class="dl-btn-ext">.zip</span></span>
           </a>
@@ -661,11 +693,11 @@ footer {
           <span class="recommended-badge" id="badge-win" style="display:none;">Detected</span>
         </div>
         <div class="dl-formats">
-          <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-Setup-1.0.0.exe">
+          <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-Setup-2.0.0.exe">
             <span class="dl-btn-icon">⬇</span>
             <span class="dl-btn-text">Download Installer <span class="dl-btn-ext">.exe</span></span>
           </a>
-          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0.exe">
+          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-2.0.0.exe">
             <span class="dl-btn-icon">💾</span>
             <span class="dl-btn-text">Portable (no install) <span class="dl-btn-ext">.exe</span></span>
           </a>
@@ -683,17 +715,13 @@ footer {
           <span class="recommended-badge" id="badge-linux" style="display:none;">Detected</span>
         </div>
         <div class="dl-formats">
-          <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-1.0.0.AppImage">
+          <a class="dl-btn primary-dl" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/RNAflow-2.0.0.AppImage">
             <span class="dl-btn-icon">⬇</span>
             <span class="dl-btn-text">AppImage (universal) <span class="dl-btn-ext">.AppImage</span></span>
           </a>
-          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/rnaflow_1.0.0_amd64.deb">
+          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/rnaflow_2.0.0_amd64.deb">
             <span class="dl-btn-icon">📦</span>
             <span class="dl-btn-text">Debian / Ubuntu <span class="dl-btn-ext">.deb</span></span>
-          </a>
-          <a class="dl-btn" href="https://github.com/bioinfocodex/rnaflow/releases/latest/download/rnaflow-1.0.0.x86_64.rpm">
-            <span class="dl-btn-icon">📦</span>
-            <span class="dl-btn-text">Fedora / RHEL <span class="dl-btn-ext">.rpm</span></span>
           </a>
         </div>
         <p class="dl-note">Ubuntu 20.04+ · Fedora 36+</p>
@@ -924,8 +952,10 @@ const FORMSPREE_ID = 'mlgoenbv';
 // You can change this anytime. Add multiple codes if needed.
 const VALID_CODES = ['RNAFLOW2025', 'BIOINFO2025', 'RNA-ACCESS-001'];
 
-// ── CONFIG: Access expiration date (50 days from launch: March 25 → May 14, 2026) ──
-const ACCESS_EXPIRY = new Date('2026-05-14T23:59:59');
+// ── CONFIG: Access expiration date ──
+// Extended to the end of 2026; the previous window closed on 14 May 2026,
+// which left every visitor looking at the "Access Period Has Ended" banner.
+const ACCESS_EXPIRY = new Date('2026-12-31T23:59:59');
 
 function isAccessExpired() {
   return new Date() > ACCESS_EXPIRY;
