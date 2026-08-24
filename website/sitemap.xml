@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Unlike bioinfocodex.com, this site is not a single-page app: the landing page
+  and the manual are separate documents with their own URLs, so both are listed.
+  The application and server files are deliberately absent — see robots.txt.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://rnaflow.bioinfocodex.com/</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://rnaflow.bioinfocodex.com/manual.html</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

@@ -10,6 +10,28 @@
 <meta property="og:url" content="https://rnaflow.bioinfocodex.com">
 <meta property="og:image" content="https://rnaflow.bioinfocodex.com/og-image.png">
 <link rel="canonical" href="https://rnaflow.bioinfocodex.com">
+
+<!-- Icons. The header mark is white strokes on a coloured button, so the icon
+     carries the brand gradient behind it to stay visible on a light tab bar.
+     The Apple icon is opaque and square — iOS ignores transparency and applies
+     its own rounded mask. -->
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#00c896">
+
+<!-- og:image was already declared but the file did not exist, so every shared
+     link fetched a 404. X also needs the twitter:* pair; og:image alone does
+     not render there. Both want absolute URLs. -->
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="RNAflow — RNA-seq analysis made simple. Raw FASTQ to publication-ready figures.">
+<meta property="og:site_name" content="RNAflow">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="RNAflow — RNA-seq Analysis Pipeline">
+<meta name="twitter:description" content="Complete pipeline from raw FASTQ files to publication-ready figures. No command-line experience required.">
+<meta name="twitter:image" content="https://rnaflow.bioinfocodex.com/og-image.png">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">

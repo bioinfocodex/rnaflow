@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26" width="26" height="26">
+  <!-- The header mark is white strokes on a coloured button, so it needs the
+       brand gradient behind it to survive on a light tab bar. The four
+       connector hairlines are dropped: invisible below about 24px. -->
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00c896"/><stop offset="100%" stop-color="#0969da"/>
+    </linearGradient>
+  </defs>
+  <rect width="26" height="26" rx="5.5" fill="url(#g)"/>
+  <path d="M3.5 21.5 C5.5 17.5 10 16.5 13 12.5 C16 8.5 20.5 7.5 22.5 4" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <circle cx="9" cy="21" r="2.1" fill="#f87171"/>
+  <circle cx="14" cy="16.5" r="2.1" fill="#fbbf24"/>
+  <circle cx="19" cy="12" r="2.1" fill="#34d399"/>
+  <circle cx="22.5" cy="8" r="2.1" fill="#e9d5ff"/>
+</svg>
