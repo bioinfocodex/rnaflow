@@ -6,7 +6,7 @@ authors:
     given-names: Matrika
     orcid: "https://orcid.org/0000-0003-2627-6251"
     affiliation: "Independent researcher, BioInfoCodex"
-version: 3.2.0
+version: 3.2.1
 license: MIT
 repository-code: "https://github.com/bioinfocodex/rnaflow"
 url: "https://bioinfocodex.com"
