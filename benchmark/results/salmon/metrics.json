@@ -1,0 +1,133 @@
+{
+  "checks": {
+    "gene_ids_unversioned": {
+      "label": "Result gene IDs carry no version suffix (needed for org.Hs.eg.db / GSEA mapping)",
+      "value": 0,
+      "threshold": "< 1% versioned",
+      "pass": true
+    },
+    "mapping_rate": {
+      "label": "Salmon mapping rate, lowest sample (%)",
+      "value": 95.5,
+      "threshold": ">= 70",
+      "pass": true
+    },
+    "count_spearman": {
+      "label": "Gene-count Spearman vs published airway, lowest sample",
+      "value": 0.923,
+      "threshold": ">= 0.85",
+      "pass": true
+    },
+    "count_logcpm_pearson": {
+      "label": "log2 CPM Pearson vs published airway, lowest sample",
+      "value": 0.917,
+      "threshold": ">= 0.90",
+      "pass": true
+    },
+    "code_equivalence": {
+      "label": "Max |log2FC| difference, RNAflow script vs reference script",
+      "value": 1.07e-14,
+      "threshold": "< 1e-6, same genes",
+      "pass": true
+    },
+    "de_recall": {
+      "label": "Recall of reference DE genes (padj<0.05, |LFC|>1), relative to depth-matched ceiling",
+      "value": 0.817,
+      "threshold": ">= 0.80 (RNAflow 0.50, ceiling 0.62)",
+      "pass": true
+    },
+    "de_precision": {
+      "label": "RNAflow DE genes also significant in the reference",
+      "value": 0.94,
+      "threshold": ">= 0.90",
+      "pass": true
+    },
+    "lfc_agreement": {
+      "label": "log2FC Pearson on reference DE genes",
+      "value": 0.96,
+      "threshold": ">= 0.90",
+      "pass": true
+    },
+    "known_targets": {
+      "label": "Known dex-induced genes recovered as up and significant",
+      "value": "7 / 7",
+      "threshold": "7 / 7",
+      "pass": true
+    },
+    "gsea_id_mapping": {
+      "label": "Result gene IDs found in org.Hs.eg.db as keyType \"ENSEMBL\" (the GSEA page's setting)",
+      "value": 0.854,
+      "threshold": ">= 0.60",
+      "pass": true
+    },
+    "lfc_shrinkage": {
+      "label": "Low-count genes (baseMean < 10) with |log2FC| > 5, unshrunk -> shrunk",
+      "value": "63 -> 5",
+      "threshold": "fewer after shrinkage",
+      "pass": true
+    }
+  },
+  "context": {
+    "reads_per_sample": {
+      "SRR1039508": 3565890,
+      "SRR1039512": 3522938,
+      "SRR1039516": 3465528,
+      "SRR1039520": 3494990,
+      "SRR1039509": 3537299,
+      "SRR1039513": 3533031,
+      "SRR1039517": 3488691,
+      "SRR1039521": 3523901
+    },
+    "mapping_rate": {
+      "SRR1039508": 95.7485475332987,
+      "SRR1039512": 96.2579356174776,
+      "SRR1039516": 95.9393059248151,
+      "SRR1039520": 96.1876561366247,
+      "SRR1039509": 95.5298606270787,
+      "SRR1039513": 96.7479179671442,
+      "SRR1039517": 96.1855477473761,
+      "SRR1039521": 96.541514590255
+    },
+    "rnaflow_sig_padj05": 1142,
+    "reference_sig_padj05_dex_only": 2713,
+    "reference_sig_padj05_paired_design": 4030,
+    "reference_truth_set": 878,
+    "known_targets": [
+      {
+        "log2FoldChange": 3.00566545720363,
+        "padj": 3.48571097457907e-37,
+        "_row": "ENSG00000120129"
+      },
+      {
+        "log2FoldChange": 4.68213525806039,
+        "padj": 1.03941363440161e-15,
+        "_row": "ENSG00000163884"
+      },
+      {
+        "log2FoldChange": 3.1268224595523,
+        "padj": 1.94191128070916e-19,
+        "_row": "ENSG00000179094"
+      },
+      {
+        "log2FoldChange": 3.36774131587236,
+        "padj": 4.22143245926817e-13,
+        "_row": "ENSG00000157514"
+      },
+      {
+        "log2FoldChange": 3.68686324806572,
+        "padj": 4.62691691972439e-42,
+        "_row": "ENSG00000096060"
+      },
+      {
+        "log2FoldChange": 6.78486777135964,
+        "padj": 2.85504155304895e-32,
+        "_row": "ENSG00000109906"
+      },
+      {
+        "log2FoldChange": 2.76624983272882,
+        "padj": 1.07551382087152e-20,
+        "_row": "ENSG00000103196"
+      }
+    ]
+  }
+}

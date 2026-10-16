@@ -1,7 +1,7 @@
 {
   "name": "rnaflow",
   "productName": "RNAflow",
-  "version": "3.0.0",
+  "version": "3.2.0",
   "description": "Complete RNA-seq analysis pipeline — from raw FASTQ to publication figures",
   "author": {
     "name": "BioInfoCodex",
@@ -33,6 +33,7 @@
     },
     "files": [
       "main.js",
+      "bootstrap.js",
       "RNAflow_App.html",
       "rnaflow_server.py",
       "!node_modules/.cache"

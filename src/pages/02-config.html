@@ -1,0 +1,315 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE: CONFIGURE                                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-config">
+  <div class="page-header">
+    <h1>⚙️ Configure Your Project</h1>
+    <p>Fill in these details once — every command in the app will update automatically.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-icon">💾</span> Project file <span class="tag tag-green" style="margin-left:auto;">New in v3</span></div>
+    <div class="card-body">
+      <p style="font-size:0.85em;color:var(--text2);line-height:1.6;margin-bottom:12px;">
+        Your settings are saved in this browser automatically and restored when you come back.
+        Export a project file to archive the exact configuration behind a result, or to hand the analysis to someone else.
+      </p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-ghost" onclick="exportProject()">⬇ Export project (.json)</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('project-import').click()">⬆ Load project file</button>
+        <input type="file" id="project-import" accept="application/json,.json" style="display:none;" onchange="importProject(this)">
+        <button class="btn btn-ghost" onclick="resetProject()" style="margin-left:auto;color:var(--red);border-color:rgba(248,81,73,0.35);">↺ Start fresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECT FOLDER -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📁</span> Project folder</div>
+    <div class="card-body">
+      <div class="field-row cols-3">
+        <div class="field">
+          <label>Save location</label>
+          <select id="cfg-loc" onchange="updateAll()">
+            <option value="~/Desktop">Desktop (recommended)</option>
+            <option value="~/Documents">Documents</option>
+            <option value="~">Home folder</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Organism tag (used in folder name)</label>
+          <input type="text" id="cfg-org-tag" value="yeast" oninput="updateAll()" placeholder="e.g. yeast, rice, human">
+        </div>
+        <div class="field">
+          <label>Read type</label>
+          <select id="cfg-readtype" onchange="updateAll()">
+            <option value="single">Single-end</option>
+            <option value="paired">Paired-end</option>
+          </select>
+        </div>
+      </div>
+      <div class="folder-preview">📁 <span id="folder-preview-text">~/Desktop/RNA-Seq_yeast</span></div>
+      <div class="session-box">
+        <div class="session-label">Run at the start of every Terminal session</div>
+        <span id="session-cmd-preview">conda activate rnaseq &amp;&amp; cd ~/Desktop/RNA-Seq_yeast</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA SOURCE -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">💾</span> Where is your data? <span class="tag tag-green" style="margin-left:auto;">New in v3</span></div>
+    <div class="card-body">
+      <div class="field-row cols-3">
+        <div class="field">
+          <label>Data source</label>
+          <select id="cfg-datasource" onchange="applyDataSource()">
+            <option value="sra">Public data — download from SRA/ENA</option>
+            <option value="local">My own FASTQ files — already on disk</option>
+            <option value="counts">A count table — CSV, TSV or Excel (go straight to DE)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>FASTQ file extension</label>
+          <select id="cfg-fq-ext" onchange="updateAll()">
+            <option value=".fastq">.fastq</option>
+            <option value=".fastq.gz">.fastq.gz</option>
+            <option value=".fq">.fq</option>
+            <option value=".fq.gz">.fq.gz</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>CPU cores to use</label>
+          <input type="number" id="cfg-threads" value="4" min="1" max="128" oninput="updateAll()">
+        </div>
+      </div>
+
+      <div class="field-row cols-2" style="margin-top:12px;">
+        <div class="field">
+          <label>Quantification method</label>
+          <select id="cfg-method" onchange="applyMethod()">
+            <option value="align">Align to genome — HISAT2 + featureCounts</option>
+            <option value="salmon">Fast quantification — Salmon (no genome index)</option>
+            <option value="smallrna">Small RNA / miRNA — miRBase + Bowtie</option>
+          </select>
+        </div>
+        <div class="field" id="adapter-field" style="display:none;">
+          <label for="cfg-adapter">3′ adapter (small RNA kit)</label>
+          <select id="cfg-adapter" onchange="updateAll()">
+            <option value="auto" selected>Auto-detect from the reads (recommended)</option>
+            <option value="TGGAATTCTCGGGTGCCAAGG">Illumina TruSeq Small RNA — TGGAATTCTCGGGTGCCAAGG</option>
+            <option value="AGATCGGAAGAGCACACGTCT">NEBNext Small RNA — AGATCGGAAGAGCACACGTCT</option>
+            <option value="AACTGTAGGCACCATCAAT">QIAseq miRNA — AACTGTAGGCACCATCAAT</option>
+          </select>
+        </div>
+        <div class="field" id="method-blurb" style="font-size:0.78em;color:var(--text3);line-height:1.55;align-self:end;padding-bottom:4px;"></div>
+      </div>
+
+      <div id="ds-local-box" style="display:none;margin-top:12px;">
+        <div class="field">
+          <label>Folder containing your FASTQ files</label>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:5px;">
+            <input id="local-fastq-path" type="text" placeholder="/Users/you/data/fastq" oninput="updateAll()" style="flex:1;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.82em;">
+            <button class="btn btn-ghost" onclick="browseLocalFolder()" style="white-space:nowrap;">📂 Browse</button>
+          </div>
+        </div>
+        <div class="alert info" style="margin-top:10px;">
+          <span class="alert-icon">💡</span>
+          <div>Enter each sample below using its <strong>file name without the extension</strong>. For single-end, <code>SampleA<span id="ds-ext-hint">.fastq</span></code> means you type <code>SampleA</code>. For paired-end, files must be named <code>SampleA_1<span class="ds-ext-hint">.fastq</span></code> and <code>SampleA_2<span class="ds-ext-hint">.fastq</span></code> — type <code>SampleA</code>.</div>
+        </div>
+        <div class="code-block" style="margin-top:10px;"><div class="code-toolbar"><span class="code-lang">bash — list what is actually in that folder</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-list-local">...</pre></div>
+      </div>
+
+      <div id="ds-counts-box" style="display:none;margin-top:12px;">
+        <div class="field-row cols-2">
+          <div class="field">
+            <label for="cfg-counts-path">Count table file</label>
+            <input id="cfg-counts-path" type="text" placeholder="/Users/you/data/counts.xlsx" oninput="updateAll()" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="cfg-counts-sheet">Excel sheet <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+            <input id="cfg-counts-sheet" type="text" placeholder="1, or the sheet name" oninput="updateAll()" autocomplete="off">
+          </div>
+        </div>
+        <div class="alert info" style="margin-top:10px;">
+          <span class="alert-icon">💡</span>
+          <div>For a table from a sequencing core, a collaborator or a paper (<code>.csv</code>, <code>.tsv</code>, <code>.txt</code> or <code>.xlsx</code>). The <strong>first column must be the gene ID</strong>, with one column per sample; other columns are ignored, and featureCounts output works as it is. Enter each sample below by its <strong>column name</strong>. Use <strong>raw counts</strong> — TPM, FPKM or normalised values give DESeq2 wrong answers. The download, QC, trimming, alignment and counting steps are skipped.</div>
+        </div>
+      </div>
+
+      <div id="ds-sra-box" class="alert info" style="margin-top:12px;">
+        <span class="alert-icon">🌐</span>
+        <div>Samples are fetched with <code>fasterq-dump</code> from their SRR/ERR/DRR accessions. Enter the accessions in the Experiment design section below.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCESSION IMPORT -->
+  <div class="card" id="card-accession">
+    <div class="card-head"><span class="card-icon">🔎</span> Import samples from a public accession <span class="tag tag-green" style="margin-left:auto;">New in v3</span></div>
+    <div class="card-body">
+      <p style="font-size:0.85em;color:var(--text2);line-height:1.6;margin-bottom:12px;">
+        Paste a GEO series or SRA/ENA study accession and RNAflow will look up every run in it —
+        no more copying accessions one at a time. Works without the local server.
+      </p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="acc-input" placeholder="GSE52778 · PRJNA229998 · SRP033351 · ERP001942"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();lookupAccession();}"
+               style="flex:1;min-width:260px;padding:9px 12px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.86em;">
+        <button class="btn btn-ghost" id="acc-btn" onclick="lookupAccession()">🔎 Look up runs</button>
+      </div>
+      <div id="acc-status" style="margin-top:10px;font-size:0.8em;color:var(--text3);line-height:1.6;"></div>
+
+      <div id="acc-results" style="display:none;margin-top:14px;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+          <span style="font-size:0.78em;color:var(--text3);">Assign all:</span>
+          <button class="btn btn-ghost" style="font-size:0.75em;padding:4px 10px;" onclick="accAssignAll('ctrl')">→ Control</button>
+          <button class="btn btn-ghost" style="font-size:0.75em;padding:4px 10px;" onclick="accAssignAll('treat')">→ Treatment</button>
+          <button class="btn btn-ghost" style="font-size:0.75em;padding:4px 10px;" onclick="accAssignAll('skip')">→ Skip</button>
+          <span style="flex:1;"></span>
+          <button class="btn" id="acc-apply" onclick="applyAccession()" style="background:var(--green);color:#04120a;border:none;font-weight:700;">✓ Add to experiment design</button>
+        </div>
+        <div style="max-height:340px;overflow:auto;border:1px solid var(--border);border-radius:8px;">
+          <table class="ref-table" id="acc-table" style="margin:0;width:100%;"></table>
+        </div>
+        <div id="acc-note" style="margin-top:8px;font-size:0.76em;color:var(--text3);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORGANISM -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🔬</span> Organism &amp; reference genome</div>
+    <div class="card-body">
+      <div class="field-row cols-2">
+        <div class="field">
+          <label>Select organism</label>
+          <select id="cfg-organism" onchange="applyOrganism()" class="org-select-wrapper">
+            <optgroup label="── Model Animals ──">
+              <option value="human">🧑 Homo sapiens (Human) — GRCh38</option>
+              <option value="mouse">🐭 Mus musculus (Mouse) — GRCm39</option>
+              <option value="rat">🐀 Rattus norvegicus (Rat) — GRCr8</option>
+              <option value="zebrafish">🐟 Danio rerio (Zebrafish) — GRCz11</option>
+              <option value="fly">🪰 Drosophila melanogaster (Fruit fly) — BDGP6.54</option>
+              <option value="worm">🪱 Caenorhabditis elegans (Worm) — WBcel235</option>
+            </optgroup>
+            <optgroup label="── Fungi ──">
+              <option value="yeast" selected>🍞 Saccharomyces cerevisiae (Yeast) — R64-1-1</option>
+              <option value="yarrowia">🧫 Yarrowia lipolytica — GCA_000002525.1</option>
+            </optgroup>
+            <optgroup label="── Crop &amp; Model Plants ──">
+              <option value="arabidopsis">🌿 Arabidopsis thaliana (Thale cress) — TAIR10</option>
+              <option value="maize">🌽 Zea mays (Maize) — NAM-5.0</option>
+              <option value="rice">🌾 Oryza sativa (Rice) — IRGSP-1.0</option>
+              <option value="wheat">🌾 Triticum aestivum (Wheat) — IWGSC</option>
+              <option value="soybean">🫘 Glycine max (Soybean) — Glycine_max_v2.1</option>
+              <option value="tomato">🍅 Solanum lycopersicum (Tomato) — SL4.0</option>
+            </optgroup>
+            <optgroup label="── Custom ──">
+              <option value="custom">🔬 Custom — enter URLs manually</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="field">
+          <label>Strandedness</label>
+          <select id="cfg-strand" onchange="updateAll()">
+            <option value="auto" selected>Auto-detect from the data (recommended)</option>
+            <option value="0">0 — Unstranded</option>
+            <option value="1">1 — Stranded forward</option>
+            <option value="2">2 — Stranded reverse (TruSeq / most modern kits)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="url-guide">
+        <div class="url-guide-title">📖 How to find genome URLs for any organism</div>
+        <ol>
+          <li>For <strong>animals</strong>: go to <code>https://www.ensembl.org</code> &nbsp;|&nbsp; For <strong>plants</strong>: go to <code>https://plants.ensembl.org</code></li>
+          <li>Search your organism name → click its name in results → click <strong>"Download DNA sequence (FASTA)"</strong></li>
+          <li>Right-click the <code>.dna.toplevel.fa.gz</code> or <code>.dna.primary_assembly.fa.gz</code> file → copy link address</li>
+          <li>For the GTF: same page → click <strong>"Download genes (GTF)"</strong> → copy the <code>.gtf.gz</code> file link</li>
+          <li>Paste both links into the boxes below. The app handles the rest.</li>
+        </ol>
+      </div>
+
+      <div class="field-row cols-2">
+        <div class="field">
+          <label>Genome FASTA URL (.fa.gz)</label>
+          <textarea id="cfg-genome-url" oninput="updateAll()">https://ftp.ensembl.org/pub/release-116/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna.toplevel.fa.gz</textarea>
+          <div class="field-hint">Paste Ensembl FTP URL ending in .fa.gz</div>
+        </div>
+        <div class="field">
+          <label>Gene annotation GTF URL (.gtf.gz)</label>
+          <textarea id="cfg-gtf-url" oninput="updateAll()">https://ftp.ensembl.org/pub/release-116/gtf/saccharomyces_cerevisiae/Saccharomyces_cerevisiae.R64-1-1.63.gtf.gz</textarea>
+          <div class="field-hint">Paste Ensembl FTP URL ending in .gtf.gz</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAMPLES -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🧪</span> Your RNA-seq samples</div>
+    <div class="card-body">
+      <div class="field-row cols-2" style="margin-bottom:16px;">
+        <div class="field">
+          <label>Control condition name</label>
+          <input type="text" id="cfg-ctrl" value="wildtype" oninput="updateAll()" placeholder="e.g. wildtype, control, mock">
+        </div>
+        <div class="field">
+          <label>Treatment condition name</label>
+          <input type="text" id="cfg-treat" value="snf2_mutant" oninput="updateAll()" placeholder="e.g. mutant, treated, drug_X">
+        </div>
+      </div>
+
+      <div class="alert info">
+        <span class="alert-icon">🔍</span>
+        <div>Find SRA accessions at <code>https://www.ncbi.nlm.nih.gov/sra</code> — search your paper title or GEO dataset ID. Accessions start with <strong>SRR</strong>, <strong>ERR</strong>, or <strong>DRR</strong>.</div>
+      </div>
+
+      <div class="samples-split">
+        <div class="sample-box">
+          <div class="sample-box-head ctrl-head">
+            🔵 Control — <span id="ctrl-name-label">wildtype</span>
+            <span class="sample-count" id="ctrl-count">3 replicates</span>
+          </div>
+          <div class="sample-box-body">
+            <div class="sample-rows" id="ctrl-rows">
+              <div class="sample-row"><input type="text" value="ERR458493" placeholder="SRR accession" oninput="updateAll()"><button class="del-btn" onclick="delRow(this)">✕</button></div>
+              <div class="sample-row"><input type="text" value="ERR458494" placeholder="SRR accession" oninput="updateAll()"><button class="del-btn" onclick="delRow(this)">✕</button></div>
+              <div class="sample-row"><input type="text" value="ERR458495" placeholder="SRR accession" oninput="updateAll()"><button class="del-btn" onclick="delRow(this)">✕</button></div>
+            </div>
+            <button class="add-row-btn" onclick="addRow('ctrl-rows')">+ Add control replicate</button>
+          </div>
+        </div>
+        <div class="sample-box">
+          <div class="sample-box-head treat-head">
+            🔴 Treatment — <span id="treat-name-label">snf2_mutant</span>
+            <span class="sample-count" id="treat-count">3 replicates</span>
+          </div>
+          <div class="sample-box-body">
+            <div class="sample-rows" id="treat-rows">
+              <div class="sample-row"><input type="text" value="ERR458500" placeholder="SRR accession" oninput="updateAll()"><button class="del-btn" onclick="delRow(this)">✕</button></div>
+              <div class="sample-row"><input type="text" value="ERR458501" placeholder="SRR accession" oninput="updateAll()"><button class="del-btn" onclick="delRow(this)">✕</button></div>
+              <div class="sample-row"><input type="text" value="ERR458502" placeholder="SRR accession" oninput="updateAll()"><button class="del-btn" onclick="delRow(this)">✕</button></div>
+            </div>
+            <button class="add-row-btn" onclick="addRow('treat-rows')">+ Add treatment replicate</button>
+          </div>
+        </div>
+      </div>
+      <div class="alert danger" id="rep-warning" style="display:none; margin-top:10px;">
+        <span class="alert-icon">⚠️</span> DESeq2 requires minimum 2 biological replicates per group. Please add more samples.
+      </div>
+
+      <div class="field" style="margin-top:14px;">
+        <label for="cfg-pairs">Pairing or batch <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+        <input type="text" id="cfg-pairs" oninput="updateAll()" autocomplete="off"
+               placeholder="e.g. donor1, donor2, donor1, donor2 — one label per sample, controls first">
+        <div class="field-hint" id="pairs-hint">If samples belong together — the same donor, animal or cell line before and after treatment, or processed in the same batch — give each one a label, in the order the samples are listed above (controls, then treatments). DESeq2 then compares within each pair (<code>~ pair + condition</code>), which usually finds many more genes. Leave empty if every sample is independent.</div>
+      </div>
+
+      <button class="gen-btn" onclick="updateAll(); goTo('page-install', document.getElementById('nav-install'))">⚡ Save configuration &amp; start pipeline →</button>
+    </div>
+  </div>
+</div>
+

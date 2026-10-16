@@ -615,6 +615,28 @@ p { font-size: 0.86em; color: var(--text2); line-height: 1.6; margin: 6px 0; }
 .selected-copy { border-color: var(--blue);  background: rgba(88,166,255,0.07); }
 .selected-copy .mode-card-title { color: var(--blue); }
 .selected-copy .mode-card-tag { display:inline-block; background:rgba(88,166,255,0.2); color:var(--blue);  border:1px solid rgba(88,166,255,0.4); }
+
+/* ── Results explorer (v3.2) ── */
+.rx-controls { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; font-size:0.85em; color:var(--text2); margin-bottom:10px; }
+.rx-controls select, .rx-controls input[type=search] { font:inherit; padding:4px 8px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); }
+.rx-controls input[type=search] { flex:1 1 200px; min-width:160px; }
+.rx-summary { font-size:0.85em; color:var(--text2); margin-bottom:10px; }
+.rx-summary b.up { color:var(--orange); } .rx-summary b.down { color:var(--blue); }
+.rx-grid { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:14px; }
+@media (max-width: 900px) { .rx-grid { grid-template-columns:1fr; } }
+.rx-plot-wrap { position:relative; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg); }
+#rx-volcano { width:100%; display:block; cursor:crosshair; }
+.rx-tip { position:absolute; pointer-events:none; display:none; background:var(--text); color:var(--bg); font-size:0.75em; padding:5px 8px; border-radius:6px; white-space:nowrap; transform:translate(10px,-110%); }
+.rx-gene { border:1px solid var(--border); border-radius:var(--radius); padding:12px; background:var(--bg2); min-height:120px; }
+.rx-gene h4 { margin:0 0 2px; font-size:1em; } .rx-gene .id { font-family:var(--mono); font-size:0.75em; color:var(--text3); }
+.rx-gene dl { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; font-size:0.8em; margin:8px 0; }
+.rx-gene dt { color:var(--text3); } .rx-gene dd { margin:0; font-family:var(--mono); }
+.rx-table-wrap { max-height:360px; overflow:auto; border:1px solid var(--border); border-radius:var(--radius); }
+.rx-table { margin:0 !important; font-size:0.8em; }
+.rx-table th { position:sticky; top:0; background:var(--bg3); cursor:pointer; user-select:none; }
+.rx-table td { font-family:var(--mono); } .rx-table td:first-child { font-family:var(--font); font-weight:600; }
+.rx-table tbody tr { cursor:pointer; } .rx-table tbody tr:hover { background:var(--bg2); }
+.rx-table tr.sel { background:var(--bg3); }
 </style>
 </head>
 <body>
@@ -642,7 +664,7 @@ p { font-size: 0.86em; color: var(--text2); line-height: 1.6; margin: 6px 0; }
     </div>
     <div class="logo-text-wrap">
       <div class="logo-name"><span class="logo-rna">RNA</span><span class="logo-flow">flow</span></div>
-      <div class="logo-tagline">RNA-seq analysis pipeline <span style="opacity:0.65;">· v3.0</span></div>
+      <div class="logo-tagline">RNA-seq analysis pipeline <span style="opacity:0.65;">· v3.2</span></div>
     </div>
   </div>
   <div class="topbar-divider"></div>
@@ -1163,7 +1185,7 @@ sudo chown -R $(whoami) $(brew --prefix)/*</pre></div>
       <span class="card-icon">🔧</span> Check 4 — Old bioinformatics tools already installed?
     </div>
     <div class="card-body">
-      <p>Run all of these. If any tool is already installed, check its version against the minimum requirements.</p>
+      <p>Run all of these. RNAflow expects the exact versions below — a different version can change your results or break a step.</p>
       <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — check all RNA tools</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
 <pre class="code"><span class="cc"># Check each tool — note the version number you see</span>
 fastqc --version
@@ -1175,27 +1197,12 @@ fasterq-dump --version
 multiqc --version</pre></div>
 
       <table class="ref-table">
-        <tr><th>Tool</th><th>Minimum version needed</th><th>If version is too old</th></tr>
-        <tr><td>FastQC</td><td>0.11.9+</td><td>Run fix command below</td></tr>
-        <tr><td>fastp</td><td>0.20.0+</td><td>Run fix command below</td></tr>
-        <tr><td>HISAT2</td><td>2.2.0+</td><td>Run fix command below</td></tr>
-        <tr><td>samtools</td><td>1.15+</td><td>Run fix command below</td></tr>
-        <tr><td>featureCounts (subread)</td><td>2.0.0+</td><td>Run fix command below</td></tr>
-        <tr><td>fasterq-dump (sra-tools)</td><td>3.0+</td><td>Run fix command below</td></tr>
-        <tr><td>MultiQC</td><td>1.12+</td><td>Run fix command below</td></tr>
+        <thead><tr><th>Tool</th><th>Version RNAflow expects</th><th>If it differs</th></tr></thead>
+        <tbody id="env-version-rows"></tbody>
       </table>
 
-      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — fix: remove and reinstall all RNA tools fresh</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
-<pre class="code"><span class="cc"># Remove old versions from conda environment</span>
-conda activate rnaseq
-conda remove fastqc fastp hisat2 samtools subread sra-tools multiqc -y
-
-<span class="cc"># Reinstall fresh latest versions</span>
-conda install -c bioconda -c conda-forge \
-  fastqc fastp hisat2 samtools subread sra-tools multiqc salmon -y
-
-<span class="cc"># Verify new versions installed</span>
-fastqc --version && hisat2 --version && samtools --version && salmon --version && fasterq-dump --version</pre></div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — fix: bring the environment to the pinned versions</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code" id="cmd-fix-env"></pre></div>
     </div>
   </div>
 
@@ -1205,38 +1212,19 @@ fastqc --version && hisat2 --version && samtools --version && salmon --version &
       <span class="card-icon">📊</span> Check 5 — R version and DESeq2 installed?
     </div>
     <div class="card-body">
-      <p>Run these in your RStudio console (bottom-left panel where you see the <code>&gt;</code> prompt).</p>
-      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — check R and packages</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
-<pre class="code"><span class="cc"># Check R version (need 4.0 or higher)</span>
-R.version.string
-
-<span class="cc"># Check if DESeq2 is installed</span>
-packageVersion("DESeq2")
-
-<span class="cc"># Check all needed packages at once</span>
-pkgs &lt;- c("DESeq2","ggplot2","pheatmap","RColorBrewer","ggrepel","dplyr")
-installed &lt;- pkgs %in% rownames(installed.packages())
-data.frame(Package=pkgs, Installed=installed)</pre></div>
+      <p>R and every R package now come from the <code>rnaseq</code> environment, so check them from a terminal, not from a separately installed RStudio.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — check R and packages</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code">conda activate rnaseq
+<span class="cc"># Should point inside your conda folder, e.g. …/envs/rnaseq/bin/Rscript</span>
+which Rscript
+Rscript -e 'for (p in c("DESeq2","tximport","apeglm","ggplot2","pheatmap","ggrepel","dplyr")) cat(sprintf("%-10s %s\n", p, tryCatch(as.character(packageVersion(p)), error=function(e) "MISSING")))'</pre></div>
 
       <table class="ref-table">
         <tr><th>You see</th><th>Meaning</th><th>Action</th></tr>
-        <tr><td>R version 4.x.x</td><td>✅ Good</td><td>No action needed</td></tr>
-        <tr><td>R version 3.x.x</td><td>❌ Too old</td><td>Download R 4.x from cran.r-project.org</td></tr>
-        <tr><td>DESeq2 version 1.38+</td><td>✅ Good</td><td>No action needed</td></tr>
-        <tr><td>Error: no package called 'DESeq2'</td><td>❌ Not installed</td><td>Run install commands in Step 1</td></tr>
-        <tr><td>FALSE in the Installed column</td><td>❌ Missing packages</td><td>Run fix below</td></tr>
+        <tr><td>Versions matching the table in Check 4</td><td>✅ Good</td><td>No action needed</td></tr>
+        <tr><td><code>which Rscript</code> points outside conda</td><td>❌ Wrong R</td><td>Run <code>conda activate rnaseq</code> first</td></tr>
+        <tr><td>MISSING, or a different version</td><td>❌ Environment out of date</td><td>Run the fix command in Check 4</td></tr>
       </table>
-
-      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — fix: install or update all missing packages</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
-<pre class="code"><span class="cc"># Update BiocManager first</span>
-install.packages(<span class="cs">"BiocManager"</span>)
-
-<span class="cc"># Force reinstall DESeq2 (fixes version conflicts)</span>
-BiocManager::install(<span class="cf">c</span>(<span class="cs">"DESeq2"</span>, <span class="cs">"apeglm"</span>, <span class="cs">"tximport"</span>), force = TRUE)
-
-<span class="cc"># Install all visualization packages</span>
-install.packages(<span class="cf">c</span>(<span class="cs">"ggplot2"</span>, <span class="cs">"pheatmap"</span>, <span class="cs">"RColorBrewer"</span>, <span class="cs">"ggrepel"</span>, <span class="cs">"dplyr"</span>),
-                 dependencies = TRUE)</pre></div>
     </div>
   </div>
 
@@ -1258,24 +1246,14 @@ conda info --envs</pre></div>
 
       <table class="ref-table">
         <tr><th>You see</th><th>Meaning</th><th>Action</th></tr>
-        <tr><td>Python 3.10.x or 3.11.x</td><td>✅ Perfect</td><td>No action needed</td></tr>
-        <tr><td>Python 3.7.x or 3.8.x</td><td>⚠️ Old — may cause issues</td><td>Recreate environment below</td></tr>
+        <tr><td>Python 3.14.8</td><td>✅ Matches the pinned environment</td><td>No action needed</td></tr>
+        <tr><td>Any other version</td><td>⚠️ Environment made by an older RNAflow</td><td>Rebuild it with the command below</td></tr>
         <tr><td>conda: command not found</td><td>❌ Conda not set up yet</td><td>Go to Step 1 to install</td></tr>
         <tr><td>rnaseq not in env list</td><td>❌ Environment not created</td><td>Create it in Step 1</td></tr>
       </table>
 
-      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — fix: recreate rnaseq environment with correct Python</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
-<pre class="code"><span class="cc"># Remove the old environment completely</span>
-conda deactivate
-conda env remove -n rnaseq -y
-
-<span class="cc"># Create fresh with Python 3.10</span>
-conda create -n rnaseq python=3.10 -y
-conda activate rnaseq
-
-<span class="cc"># Reinstall all tools into the fresh environment</span>
-conda install -c bioconda -c conda-forge \
-  fastqc fastp hisat2 samtools subread sra-tools multiqc salmon -y</pre></div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — fix: rebuild the rnaseq environment from the pinned file</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code" id="cmd-recreate-env"></pre></div>
     </div>
   </div>
 
@@ -1382,6 +1360,7 @@ echo "=== All checks done ==="</pre></div>
           <select id="cfg-datasource" onchange="applyDataSource()">
             <option value="sra">Public data — download from SRA/ENA</option>
             <option value="local">My own FASTQ files — already on disk</option>
+            <option value="counts">A count table — CSV, TSV or Excel (go straight to DE)</option>
           </select>
         </div>
         <div class="field">
@@ -1405,6 +1384,16 @@ echo "=== All checks done ==="</pre></div>
           <select id="cfg-method" onchange="applyMethod()">
             <option value="align">Align to genome — HISAT2 + featureCounts</option>
             <option value="salmon">Fast quantification — Salmon (no genome index)</option>
+            <option value="smallrna">Small RNA / miRNA — miRBase + Bowtie</option>
+          </select>
+        </div>
+        <div class="field" id="adapter-field" style="display:none;">
+          <label for="cfg-adapter">3′ adapter (small RNA kit)</label>
+          <select id="cfg-adapter" onchange="updateAll()">
+            <option value="auto" selected>Auto-detect from the reads (recommended)</option>
+            <option value="TGGAATTCTCGGGTGCCAAGG">Illumina TruSeq Small RNA — TGGAATTCTCGGGTGCCAAGG</option>
+            <option value="AGATCGGAAGAGCACACGTCT">NEBNext Small RNA — AGATCGGAAGAGCACACGTCT</option>
+            <option value="AACTGTAGGCACCATCAAT">QIAseq miRNA — AACTGTAGGCACCATCAAT</option>
           </select>
         </div>
         <div class="field" id="method-blurb" style="font-size:0.78em;color:var(--text3);line-height:1.55;align-self:end;padding-bottom:4px;"></div>
@@ -1423,6 +1412,23 @@ echo "=== All checks done ==="</pre></div>
           <div>Enter each sample below using its <strong>file name without the extension</strong>. For single-end, <code>SampleA<span id="ds-ext-hint">.fastq</span></code> means you type <code>SampleA</code>. For paired-end, files must be named <code>SampleA_1<span class="ds-ext-hint">.fastq</span></code> and <code>SampleA_2<span class="ds-ext-hint">.fastq</span></code> — type <code>SampleA</code>.</div>
         </div>
         <div class="code-block" style="margin-top:10px;"><div class="code-toolbar"><span class="code-lang">bash — list what is actually in that folder</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-list-local">...</pre></div>
+      </div>
+
+      <div id="ds-counts-box" style="display:none;margin-top:12px;">
+        <div class="field-row cols-2">
+          <div class="field">
+            <label for="cfg-counts-path">Count table file</label>
+            <input id="cfg-counts-path" type="text" placeholder="/Users/you/data/counts.xlsx" oninput="updateAll()" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="cfg-counts-sheet">Excel sheet <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+            <input id="cfg-counts-sheet" type="text" placeholder="1, or the sheet name" oninput="updateAll()" autocomplete="off">
+          </div>
+        </div>
+        <div class="alert info" style="margin-top:10px;">
+          <span class="alert-icon">💡</span>
+          <div>For a table from a sequencing core, a collaborator or a paper (<code>.csv</code>, <code>.tsv</code>, <code>.txt</code> or <code>.xlsx</code>). The <strong>first column must be the gene ID</strong>, with one column per sample; other columns are ignored, and featureCounts output works as it is. Enter each sample below by its <strong>column name</strong>. Use <strong>raw counts</strong> — TPM, FPKM or normalised values give DESeq2 wrong answers. The download, QC, trimming, alignment and counting steps are skipped.</div>
+        </div>
       </div>
 
       <div id="ds-sra-box" class="alert info" style="margin-top:12px;">
@@ -1501,7 +1507,8 @@ echo "=== All checks done ==="</pre></div>
         <div class="field">
           <label>Strandedness</label>
           <select id="cfg-strand" onchange="updateAll()">
-            <option value="0">0 — Unstranded (use if unsure)</option>
+            <option value="auto" selected>Auto-detect from the data (recommended)</option>
+            <option value="0">0 — Unstranded</option>
             <option value="1">1 — Stranded forward</option>
             <option value="2">2 — Stranded reverse (TruSeq / most modern kits)</option>
           </select>
@@ -1588,6 +1595,13 @@ echo "=== All checks done ==="</pre></div>
         <span class="alert-icon">⚠️</span> DESeq2 requires minimum 2 biological replicates per group. Please add more samples.
       </div>
 
+      <div class="field" style="margin-top:14px;">
+        <label for="cfg-pairs">Pairing or batch <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+        <input type="text" id="cfg-pairs" oninput="updateAll()" autocomplete="off"
+               placeholder="e.g. donor1, donor2, donor1, donor2 — one label per sample, controls first">
+        <div class="field-hint" id="pairs-hint">If samples belong together — the same donor, animal or cell line before and after treatment, or processed in the same batch — give each one a label, in the order the samples are listed above (controls, then treatments). DESeq2 then compares within each pair (<code>~ pair + condition</code>), which usually finds many more genes. Leave empty if every sample is independent.</div>
+      </div>
+
       <button class="gen-btn" onclick="updateAll(); goTo('page-install', document.getElementById('nav-install'))">⚡ Save configuration &amp; start pipeline →</button>
     </div>
   </div>
@@ -1610,27 +1624,15 @@ echo "=== All checks done ==="</pre></div>
 <span class="cc"># 2. Install Miniforge (Conda for bioinformatics)</span>
 brew install miniforge
 conda init zsh
-<span class="cc"># ↑ Close and reopen Terminal after this!</span>
-
-<span class="cc"># 3. Create dedicated RNA-seq environment</span>
-conda create -n rnaseq python=3.10 -y
-conda activate rnaseq
-
-<span class="cc"># 4. Install all bioinformatics tools at once</span>
-conda install -c bioconda -c conda-forge \
-  fastqc fastp hisat2 samtools subread sra-tools multiqc salmon -y
-
-<span class="cc"># 5. Verify — all should print version numbers</span>
-fastqc --version && hisat2 --version && samtools --version && salmon --version && fasterq-dump --version</pre></div>
+<span class="cc"># ↑ Close and reopen Terminal after this!</span></pre></div>
     </div>
   </div>
   <div class="card">
-    <div class="card-head"><span class="card-icon">📊</span> R + RStudio packages</div>
+    <div class="card-head"><span class="card-icon">📦</span> RNA-seq tools, R and Bioconductor — one pinned environment</div>
     <div class="card-body">
-      <div class="alert warning"><span class="alert-icon">⚠️</span> Download <strong>R</strong> from <code>cran.r-project.org/bin/macosx</code> and <strong>RStudio</strong> from <code>posit.co/download/rstudio-desktop</code> first. Then paste this into the RStudio console:</div>
-      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code">install.packages(<span class="cs">"BiocManager"</span>)
-BiocManager::install(c(<span class="cs">"DESeq2"</span>, <span class="cs">"apeglm"</span>, <span class="cs">"tximport"</span>))
-install.packages(c(<span class="cs">"ggplot2"</span>, <span class="cs">"pheatmap"</span>, <span class="cs">"RColorBrewer"</span>, <span class="cs">"ggrepel"</span>, <span class="cs">"dplyr"</span>))</pre></div>
+      <p>Every tool and R package is installed at a fixed version, so your results can be reproduced exactly on another machine or years from now. R and DESeq2 come from this environment too, so there is no separate R or RStudio install. About 300 MB to download.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-install-env"></pre></div>
+      <div class="alert info"><span class="alert-icon">ℹ️</span><div>Prefer RStudio? Start it from a terminal where <code>conda activate rnaseq</code> has run, so it uses this environment's R and packages rather than a separate install.</div></div>
     </div>
   </div>
   <div class="step-nav">
@@ -1811,6 +1813,20 @@ install.packages(c(<span class="cs">"ggplot2"</span>, <span class="cs">"pheatmap
       <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-preview">...</pre></div>
     </div>
   </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🩺</span> QC summary — is every sample fit to analyse?</div>
+    <div class="card-body">
+      <p>FastQC only looks at the reads. This checks where they went: how many mapped, how many came from rRNA or mitochondria, and on the genome route how evenly they cover each gene. Everything is gathered into one MultiQC report with a PASS / WARN verdict per sample. Look at it before running DESeq2 — one bad sample can distort every result.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-postqc">...</pre></div>
+      <table class="ref-table" style="margin-top:10px;">
+        <tr><th>Check</th><th>PASS</th><th>If it fails</th></tr>
+        <tr><td>Mapped reads</td><td>≥ 70%</td><td>Wrong reference or read type, or contamination</td></tr>
+        <tr><td>rRNA reads</td><td>&lt; 10%</td><td>rRNA depletion or poly-A selection did not work well</td></tr>
+        <tr><td>Mitochondrial reads</td><td>&lt; 30%</td><td>Stressed or dying cells; common in some tissues</td></tr>
+        <tr><td>Gene-body coverage (genome route)</td><td>Flat across the gene</td><td>Strong 3′ bias means degraded RNA — compare RIN values</td></tr>
+      </table>
+    </div>
+  </div>
   <div class="step-nav">
     <button class="btn btn-ghost" onclick="markDone('nav-counts'); goTo('page-genefamily', document.getElementById('nav-genefamily'))">Mark done &amp; next → Gene Family Analysis</button>
   </div>
@@ -1846,6 +1862,20 @@ sig_strict &lt;- res_df[res_df$padj &lt; <span class="cn">0.05</span> &amp; <spa
 <span class="cc"># Top 20 most significant</span>
 top20 &lt;- <span class="cf">head</span>(sig[<span class="cf">order</span>(sig$padj), ], <span class="cn">20</span>)
 <span class="cf">print</span>(top20[, <span class="cf">c</span>(<span class="cs">"gene"</span>, <span class="cs">"log2FoldChange"</span>, <span class="cs">"padj"</span>)])</pre></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">⚖️</span> Check with edgeR and limma-voom</div>
+    <div class="card-body">
+      <p>DESeq2, edgeR and limma-voom model counts differently. Genes that all three call significant are the most robust; a gene only one method calls deserves a second look. This runs both on exactly the samples, filtering and design DESeq2 used, then compares them in a table and a Venn diagram. Run it after the DESeq2 step.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-consensus">...</pre></div>
+      <table class="ref-table" style="margin-top:10px;">
+        <tr><th>Output</th><th>What it holds</th></tr>
+        <tr><td><code>results/edgeR_results.csv</code></td><td>edgeR quasi-likelihood test, TMM-normalised</td></tr>
+        <tr><td><code>results/limma_voom_results.csv</code></td><td>limma-voom with sample quality weights</td></tr>
+        <tr><td><code>results/method_comparison.csv</code></td><td>Every gene with all three results and <code>n_methods</code> — how many call it significant</td></tr>
+        <tr><td><code>results/method_venn.png</code></td><td>Overlap of the three significant gene lists</td></tr>
+      </table>
     </div>
   </div>
   <div class="step-nav">
@@ -2357,7 +2387,7 @@ p_check &lt;- <span class="cf">ggplot</span>(pca_data, <span class="cf">aes</spa
       <p>ComBat-seq corrects for batch effects directly on raw count data while preserving the count distribution needed by DESeq2. This is the <strong>recommended approach</strong> for RNA-seq count data.</p>
       <div class="alert success"><span class="alert-icon">✅</span> <strong>ComBat-seq vs multi-factor model:</strong> ComBat-seq physically removes batch variation from counts. The multi-factor model (Step 11) statistically accounts for it. Both are valid — ComBat-seq is preferred when sharing data or running downstream tools that don't accept multi-factor designs.</div>
       <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — ComBat-seq batch correction on raw counts</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
-<pre class="code"><span class="cc"># Install if needed: BiocManager::install("sva")</span>
+<pre class="code"><span class="cc"># sva is included in the rnaseq environment</span>
 <span class="cf">library</span>(sva); <span class="cf">library</span>(DESeq2); <span class="cf">library</span>(ggplot2); <span class="cf">library</span>(ggrepel)
 
 <span class="cc"># batch and group vectors must be in the same order as your count columns
@@ -2398,7 +2428,7 @@ res_bc_df &lt;- <span class="cf">as.data.frame</span>(res_bc); res_bc_df$gene &l
     <div class="card-body">
       <p>Use <code>removeBatchEffect</code> on VST-normalized data for making PCA plots and heatmaps. <strong>Do not use</strong> the output as DESeq2 input — it is not count data.</p>
       <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — limma batch removal for plots</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
-<pre class="code"><span class="cc"># Install if needed: BiocManager::install("limma")</span>
+<pre class="code"><span class="cc"># limma is included in the rnaseq environment</span>
 <span class="cf">library</span>(limma); <span class="cf">library</span>(DESeq2)
 
 <span class="cc"># Get VST-normalized data from your DESeq2 object</span>
@@ -2464,7 +2494,7 @@ res_sva &lt;- <span class="cf">results</span>(dds_sva, contrast=<span class="cf"
     <div class="card-head"><span class="card-icon">🖼️</span> Step 3 — Compare PCA before vs after batch correction</div>
     <div class="card-body">
       <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — side-by-side PCA comparison</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
-<pre class="code"><span class="cc"># Install if needed: install.packages("patchwork")</span>
+<pre class="code"><span class="cc"># patchwork is included in the rnaseq environment</span>
 <span class="cf">library</span>(patchwork)
 
 <span class="cc"># Before: VST from uncorrected counts</span>
@@ -2529,25 +2559,8 @@ p_after  &lt;- <span class="cf">plotPCA</span>(vst_after,  intgroup=<span class=
   <div class="card">
     <div class="card-head"><span class="card-icon">📦</span> Install required packages (one-time)</div>
     <div class="card-body">
-      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — install packages</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
-<pre class="code"><span class="cf">if</span> (!<span class="cf">requireNamespace</span>(<span class="cs">"BiocManager"</span>, quietly=<span class="cn">TRUE</span>)) <span class="cf">install.packages</span>(<span class="cs">"BiocManager"</span>)
-
-<span class="cc"># Core enrichment packages</span>
-BiocManager::<span class="cf">install</span>(<span class="cf">c</span>(<span class="cs">"clusterProfiler"</span>, <span class="cs">"enrichplot"</span>, <span class="cs">"ReactomePA"</span>, <span class="cs">"fgsea"</span>), ask=<span class="cn">FALSE</span>)
-
-<span class="cc"># Organism annotation databases (install the ones relevant to your organism)</span>
-BiocManager::<span class="cf">install</span>(<span class="cf">c</span>(
-  <span class="cs">"org.Hs.eg.db"</span>,   <span class="cc"># Human</span>
-  <span class="cs">"org.Mm.eg.db"</span>,   <span class="cc"># Mouse</span>
-  <span class="cs">"org.Rn.eg.db"</span>,   <span class="cc"># Rat</span>
-  <span class="cs">"org.Sc.sgd.db"</span>,  <span class="cc"># Yeast (S. cerevisiae)</span>
-  <span class="cs">"org.At.tair.db"</span>, <span class="cc"># Arabidopsis</span>
-  <span class="cs">"org.Dm.eg.db"</span>,   <span class="cc"># Fruit fly</span>
-  <span class="cs">"org.Ce.eg.db"</span>,   <span class="cc"># C. elegans</span>
-  <span class="cs">"org.Dr.eg.db"</span>    <span class="cc"># Zebrafish</span>
-), ask=<span class="cn">FALSE</span>)
-
-<span class="cf">install.packages</span>(<span class="cf">c</span>(<span class="cs">"ggplot2"</span>, <span class="cs">"dplyr"</span>))  <span class="cc"># if not already installed</span></pre></div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — install the annotation database for your organism</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code" id="gs-install"></pre></div>
       <table class="ref-table" style="margin-top:10px;">
         <tr><th>Organism</th><th>OrgDb package</th><th>KEGG code</th><th>Reactome organism</th></tr>
         <tr><td>Human</td><td><code>org.Hs.eg.db</code></td><td><code>hsa</code></td><td><code>human</code></td></tr>
@@ -2569,30 +2582,53 @@ BiocManager::<span class="cf">install</span>(<span class="cf">c</span>(
       <div class="alert warning" id="gs-orgdb-warning" style="display:none;margin-bottom:10px;"></div>
       <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — load DESeq2 results and prepare gene lists</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
 <pre class="code"><span class="cf">library</span>(clusterProfiler); <span class="cf">library</span>(enrichplot); <span class="cf">library</span>(ggplot2); <span class="cf">library</span>(dplyr)
-<span class="cf">library</span>(org.Sc.sgd.db)  <span class="cc"># ← CHANGE to your organism's OrgDb package</span>
+<span class="cf">library</span>(<span id="gs-orgdb-lib">org.Sc.sgd.db</span>)  <span class="cc"># your organism's annotation database</span>
 
 <span class="cc"># ─── Edit these ───────────────────────────────────────────────────────────</span>
 base_path  &lt;- <span class="cs">"<span id="gs-base">~/Desktop/RNA-Seq_yeast</span>"</span>
 OrgDb_pkg  &lt;- <span id="gs-orgdb">org.Sc.sgd.db</span>  <span class="cc"># your organism OrgDb</span>
-key_type   &lt;- <span class="cs">"<span id="gs-keytype">GENENAME</span>"</span>      <span class="cc"># "SYMBOL" for most; "TAIR" for arabidopsis</span>
+key_type   &lt;- <span class="cs">"<span id="gs-keytype">ORF</span>"</span>      <span class="cc"># the ID type in RNAflow's results for this organism</span>
 kegg_org   &lt;- <span class="cs">"<span id="gs-kegg">sce</span>"</span>           <span class="cc"># KEGG organism code</span>
 react_org  &lt;- <span class="cs">"<span id="gs-react">yeast</span>"</span>         <span class="cc"># Reactome organism name</span>
 <span class="cc"># ──────────────────────────────────────────────────────────────────────────</span>
 
 <span class="cc"># Load DESeq2 results</span>
 res_df &lt;- <span class="cf">read.csv</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/deseq2_results.csv"</span>))
+<span class="cc"># Drop Ensembl version suffixes (ENSG00000120129.12 → ENSG00000120129):
+# annotation databases store IDs without them</span>
+res_df$gene &lt;- <span class="cf">sub</span>(<span class="cs">"\\.[0-9]+$"</span>, <span class="cs">""</span>, res_df$gene)
+<span class="cc"># An imported count table may use gene symbols (TP53) rather than Ensembl IDs;
+# follow what the results actually contain</span>
+<span class="cf">if</span> (key_type == <span class="cs">"ENSEMBL"</span> &amp;&amp; <span class="cf">mean</span>(<span class="cf">grepl</span>(<span class="cs">"^ENS"</span>, res_df$gene)) &lt; <span class="cn">0.5</span>) {
+  key_type &lt;- <span class="cs">"SYMBOL"</span>
+  <span class="cf">cat</span>(<span class="cs">"Gene IDs look like symbols, so key_type is SYMBOL\n"</span>)
+}
+
+<span class="cc"># Check the IDs actually match the database before going further — a wrong
+# key_type otherwise gives empty results with no error</span>
+id_map &lt;- <span class="cf">bitr</span>(res_df$gene, fromType=key_type, toType=<span class="cs">"ENTREZID"</span>, OrgDb=OrgDb_pkg)
+<span class="cf">cat</span>(<span class="cs">"Genes matched in"</span>, <span class="cs">"<span id="gs-orgdb-name">org.Sc.sgd.db</span>"</span>, <span class="cs">":"</span>, <span class="cf">length</span>(<span class="cf">unique</span>(id_map[[key_type]])), <span class="cs">"/"</span>, <span class="cf">nrow</span>(res_df), <span class="cs">"\n"</span>)
+<span class="cf">if</span> (<span class="cf">length</span>(<span class="cf">unique</span>(id_map[[key_type]])) &lt; <span class="cn">0.5</span> * <span class="cf">nrow</span>(res_df))
+  <span class="cf">warning</span>(<span class="cs">"Fewer than half the genes matched — check key_type against head(res_df$gene)"</span>)
 
 <span class="cc"># 1. Significant gene list for ORA (padj&lt;0.05, |LFC|&gt;1)</span>
 sig_genes &lt;- res_df$gene[!<span class="cf">is.na</span>(res_df$padj) &amp; res_df$padj &lt; <span class="cn">0.05</span> &amp;
                           <span class="cf">abs</span>(res_df$log2FoldChange) &gt; <span class="cn">1</span>]
 <span class="cf">cat</span>(<span class="cs">"Significant genes (ORA input):"</span>, <span class="cf">length</span>(sig_genes), <span class="cs">"\n"</span>)
 
-<span class="cc"># 2. Ranked gene list for GSEA (all genes, ranked by signed log10 p-value)</span>
-res_ranked &lt;- res_df[!<span class="cf">is.na</span>(res_df$padj) &amp; !<span class="cf">is.na</span>(res_df$log2FoldChange), ]
-res_ranked$score &lt;- <span class="cf">sign</span>(res_ranked$log2FoldChange) * (-<span class="cf">log10</span>(res_ranked$padj + <span class="cn">1e-300</span>))
+<span class="cc"># 2. Ranked gene list for GSEA — all tested genes, ranked by the Wald statistic.
+# (Ranking by signed -log10 padj ties thousands of genes at padj = 1.)</span>
+res_ranked &lt;- res_df[!<span class="cf">is.na</span>(res_df$stat), ]
+res_ranked$score &lt;- res_ranked$stat
 res_ranked &lt;- res_ranked[<span class="cf">order</span>(res_ranked$score, decreasing=<span class="cn">TRUE</span>), ]
 gene_list &lt;- <span class="cf">setNames</span>(res_ranked$score, res_ranked$gene)
-<span class="cf">cat</span>(<span class="cs">"Ranked gene list (GSEA input):"</span>, <span class="cf">length</span>(gene_list), <span class="cs">"genes\n"</span>)</pre></div>
+<span class="cf">cat</span>(<span class="cs">"Ranked gene list (GSEA input):"</span>, <span class="cf">length</span>(gene_list), <span class="cs">"genes\n"</span>)
+
+<span class="cc"># 3. The same lists as Entrez IDs, which KEGG and Reactome need</span>
+entrez_sig &lt;- <span class="cf">unique</span>(id_map$ENTREZID[id_map[[key_type]] %in% sig_genes])
+gene_list_entrez &lt;- gene_list[id_map[[key_type]]]
+<span class="cf">names</span>(gene_list_entrez) &lt;- id_map$ENTREZID
+gene_list_entrez &lt;- <span class="cf">sort</span>(gene_list_entrez[!<span class="cf">duplicated</span>(<span class="cf">names</span>(gene_list_entrez)) &amp; !<span class="cf">is.na</span>(gene_list_entrez)], decreasing=<span class="cn">TRUE</span>)</pre></div>
     </div>
   </div>
 
@@ -2675,10 +2711,11 @@ p_ridge &lt;- <span class="cf">ridgeplot</span>(gsea_bp, showCategory=<span clas
     <div class="card-body">
       <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — KEGG ORA and GSEA</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
 <pre class="code"><span class="cc"># ─── KEGG ORA ────────────────────────────────────────────────────────────
-# For most organisms, clusterProfiler can use gene symbols directly.
-# For human/mouse, convert SYMBOL → ENTREZID first (see note below).</span>
-kegg_ora &lt;- <span class="cf">enrichKEGG</span>(gene          = sig_genes,
+# Entrez IDs from the setup block; keyType "ncbi-geneid" lets KEGG map them
+# for every organism, including yeast and Arabidopsis.</span>
+kegg_ora &lt;- <span class="cf">enrichKEGG</span>(gene          = entrez_sig,
                         organism      = kegg_org,
+                        keyType       = <span class="cs">"ncbi-geneid"</span>,
                         pAdjustMethod = <span class="cs">"BH"</span>,
                         pvalueCutoff  = <span class="cn">0.05</span>)
 
@@ -2692,18 +2729,24 @@ p_kegg &lt;- <span class="cf">barplot</span>(kegg_ora, showCategory=<span class=
 <span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/KEGG_barplot.png"</span>), p_kegg, width=<span class="cn">10</span>, height=<span class="cn">8</span>, dpi=<span class="cn">300</span>)
 
 <span class="cc"># ─── KEGG GSEA ───────────────────────────────────────────────────────────</span>
-gsea_kegg &lt;- <span class="cf">gseKEGG</span>(geneList      = gene_list,
+gsea_kegg &lt;- <span class="cf">gseKEGG</span>(geneList      = gene_list_entrez,
                       organism      = kegg_org,
+                      keyType       = <span class="cs">"ncbi-geneid"</span>,
                       minGSSize     = <span class="cn">10</span>,
                       pvalueCutoff  = <span class="cn">0.05</span>,
                       pAdjustMethod = <span class="cs">"BH"</span>,
                       verbose       = <span class="cn">FALSE</span>)
 <span class="cf">write.csv</span>(<span class="cf">as.data.frame</span>(gsea_kegg), <span class="cf">paste0</span>(base_path, <span class="cs">"/results/KEGG_GSEA.csv"</span>), row.names=<span class="cn">FALSE</span>)
-<span class="cf">cat</span>(<span class="cs">"KEGG GSEA terms:"</span>, <span class="cf">nrow</span>(<span class="cf">as.data.frame</span>(gsea_kegg)), <span class="cs">"\n"</span>)
+<span class="cf">cat</span>(<span class="cs">"KEGG GSEA terms:"</span>, <span class="cf">nrow</span>(<span class="cf">as.data.frame</span>(gsea_kegg)), <span class="cs">"\n"</span>)</pre></div>
+    </div>
+  </div>
 
-<span class="cc"># Note for human/mouse — must convert gene IDs to ENTREZ first:
-# entrez &lt;- bitr(sig_genes, fromType="SYMBOL", toType="ENTREZID", OrgDb=org.Hs.eg.db)$ENTREZID
-# Then use entrez as the gene= argument and gene_list with ENTREZ names for GSEA</span></pre></div>
+  <!-- FGSEA HALLMARK (v3.2) -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🎯</span> fgsea — MSigDB Hallmark gene sets</div>
+    <div class="card-body">
+      <p>The 50 Hallmark sets each summarise one well-defined biological process (for example <em>inflammatory response</em>, <em>hypoxia</em>, <em>oxidative phosphorylation</em>), so the result is short and easy to interpret. Every gene is ranked by the DESeq2 statistic and fgsea tests whether a set's genes sit towards the top (activated) or bottom (suppressed). The <strong>enrichment ranking plots</strong> show, for each top pathway, the running enrichment score, where its genes fall in the ranking, and the ranked statistic. Needs internet the first time, to download the gene sets.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-fgsea">...</pre></div>
     </div>
   </div>
 
@@ -2818,6 +2861,39 @@ p_upset &lt;- <span class="cf">upsetplot</span>(go_bp, n=<span class="cn">10</sp
   <div class="page-header">
     <h1>📂 Results &amp; Export <span class="tag tag-green" style="font-size:0.5em;vertical-align:middle;">New in v3</span></h1>
     <p>Look at what the pipeline produced without leaving RNAflow, and export the whole project as a reproducible workflow.</p>
+  </div>
+
+  <!-- INTERACTIVE EXPLORER (v3.2) -->
+  <div class="card" id="rx-card">
+    <div class="card-head"><span class="card-icon">🔎</span> Explore results
+      <button class="btn btn-ghost" style="margin-left:auto;font-size:0.78em;padding:4px 12px;" onclick="rxLoad()">↻ Load</button>
+    </div>
+    <div class="card-body">
+      <div id="rx-status" style="font-size:0.83em;color:var(--text3);line-height:1.6;">Run the DESeq2 step, then press Load. Reads <code>results/deseq2_results.csv</code> through the local server.</div>
+      <div id="rx-main" style="display:none;">
+        <div class="rx-controls">
+          <label>padj &lt; <select id="rx-padj" onchange="rxRender()"><option>0.01</option><option selected>0.05</option><option>0.1</option></select></label>
+          <label>|log2FC| &gt; <select id="rx-lfc" onchange="rxRender()"><option>0</option><option>0.5</option><option selected>1</option><option>2</option></select></label>
+          <label title="apeglm-shrunken fold changes keep noisy low-count genes from the edges"><input type="checkbox" id="rx-shrunk" checked onchange="rxRender()"> shrunken fold changes</label>
+          <input type="search" id="rx-search" placeholder="Find a gene — name or ID" oninput="rxSearch(this.value)" autocomplete="off">
+        </div>
+        <div id="rx-summary" class="rx-summary"></div>
+        <div class="rx-grid">
+          <div class="rx-plot-wrap">
+            <canvas id="rx-volcano" height="380" aria-label="Volcano plot: log2 fold change against -log10 adjusted p-value. Hover a point for the gene; click to see its counts."></canvas>
+            <div id="rx-tip" class="rx-tip" role="status"></div>
+          </div>
+          <div id="rx-gene" class="rx-gene"><div style="color:var(--text3);font-size:0.85em;">Click a point, a table row or search to see a gene's counts in every sample.</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin:14px 0 6px;">
+          <h3 style="margin:0;">Significant genes</h3>
+          <span id="rx-count" style="font-size:0.8em;color:var(--text3);"></span>
+          <button class="btn btn-ghost" style="margin-left:auto;font-size:0.78em;padding:4px 12px;" onclick="rxDownload()">⬇ Download these genes (CSV)</button>
+        </div>
+        <div class="rx-table-wrap"><table class="ref-table rx-table" id="rx-table"></table></div>
+        <div id="rx-enrich" style="margin-top:18px;"></div>
+      </div>
+    </div>
   </div>
 
   <!-- VIEWER -->
@@ -2985,7 +3061,8 @@ function clearDone(navId) {
 const CFG_FIELDS = [
   'cfg-loc','cfg-org-tag','cfg-readtype','cfg-datasource','cfg-fq-ext',
   'cfg-threads','cfg-method','local-fastq-path','cfg-organism','cfg-strand',
-  'cfg-genome-url','cfg-gtf-url','cfg-ctrl','cfg-treat',
+  'cfg-genome-url','cfg-gtf-url','cfg-ctrl','cfg-treat','cfg-pairs',
+  'cfg-counts-path','cfg-counts-sheet','cfg-adapter',
   'hpc-host','hpc-user','hpc-data-path','hpc-cpus','hpc-mem','hpc-time',
   'hpc-jobname','hpc-partition','hpc-email',
   'cloud-host','cloud-user','cloud-work-dir','cloud-data-path','cloud-out-path'
@@ -3136,15 +3213,21 @@ function openCmd(path) {
 // ── ANNOTATION PACKAGES FOR GSEA (v3) ─────────────────────────────────────
 // The GSEA page used to hardcode yeast, so anyone on another organism got
 // silently wrong OrgDb / KEGG / Reactome settings.
+//
+// key is the ID type in RNAflow's own results, which come from an Ensembl
+// GTF or cDNA: ENSG…/ENSMUSG… for vertebrates, FBgn… for fly, WBGene… for
+// worm, systematic ORF names (YPL071C) for yeast, AGI codes (AT1G01010) for
+// Arabidopsis. It was SYMBOL (GENENAME for yeast), which matched none of
+// them, so enrichment silently ran on an empty gene list.
 const ORG_ANNOT = {
-  human:       {db:'org.Hs.eg.db',   key:'SYMBOL',   kegg:'hsa',  react:'human'},
-  mouse:       {db:'org.Mm.eg.db',   key:'SYMBOL',   kegg:'mmu',  react:'mouse'},
-  rat:         {db:'org.Rn.eg.db',   key:'SYMBOL',   kegg:'rno',  react:'rat'},
-  zebrafish:   {db:'org.Dr.eg.db',   key:'SYMBOL',   kegg:'dre',  react:'zebrafish'},
-  fly:         {db:'org.Dm.eg.db',   key:'SYMBOL',   kegg:'dme',  react:'fly'},
-  worm:        {db:'org.Ce.eg.db',   key:'SYMBOL',   kegg:'cel',  react:'celegans'},
-  yeast:       {db:'org.Sc.sgd.db',  key:'GENENAME', kegg:'sce',  react:'yeast'},
-  arabidopsis: {db:'org.At.tair.db', key:'TAIR',     kegg:'ath',  react:''},
+  human:       {db:'org.Hs.eg.db',   key:'ENSEMBL', kegg:'hsa',  react:'human'},
+  mouse:       {db:'org.Mm.eg.db',   key:'ENSEMBL', kegg:'mmu',  react:'mouse'},
+  rat:         {db:'org.Rn.eg.db',   key:'ENSEMBL', kegg:'rno',  react:'rat'},
+  zebrafish:   {db:'org.Dr.eg.db',   key:'ENSEMBL', kegg:'dre',  react:'zebrafish'},
+  fly:         {db:'org.Dm.eg.db',   key:'FLYBASE', kegg:'dme',  react:'fly'},
+  worm:        {db:'org.Ce.eg.db',   key:'ENSEMBL', kegg:'cel',  react:'celegans'},
+  yeast:       {db:'org.Sc.sgd.db',  key:'ORF',     kegg:'sce',  react:'yeast'},
+  arabidopsis: {db:'org.At.tair.db', key:'TAIR',    kegg:'ath',  react:''},
   // Species with no Bioconductor OrgDb — clusterProfiler needs a custom
   // TERM2GENE table instead, so say so rather than emit a package name
   // that will simply fail to install.
@@ -3156,6 +3239,287 @@ const ORG_ANNOT = {
   tomato:      {db:'', key:'', kegg:'sly',  react:''},
   custom:      {db:'', key:'', kegg:'',     react:''}
 };
+
+// ── PINNED SOFTWARE ENVIRONMENT ───────────────────────────────────────────
+// Every tool and R package at a fixed version, so the same FASTQ files give
+// the same numbers on every machine and every month. Before this, installs
+// were unpinned: a fresh install in October 2026 pulled FastQC 0.13, which
+// dropped the -o flag RNAflow used, and Intel/Linux solves quietly chose a
+// ten-year-old sva. R and Bioconductor now live in the same environment as
+// the command-line tools instead of a separate RStudio install.
+//
+// The whole set was solved on osx-arm64, osx-64 and linux-64 (WSL2) together.
+// Change versions here only after re-solving all three.
+const RNAFLOW_ENV = {
+  name: 'rnaseq',
+  release: '2026.10',
+  tools: [
+    ['fastqc', '0.13.0', 'FastQC'],
+    ['fastp', '1.4.0', 'fastp'],
+    ['hisat2', '2.2.3', 'HISAT2'],
+    ['samtools', '1.24', 'samtools'],
+    ['subread', '2.1.1', 'featureCounts (subread)'],
+    ['salmon', '2.8.0', 'Salmon'],
+    ['sra-tools', '3.4.1', 'fasterq-dump (sra-tools)'],
+    ['multiqc', '1.35', 'MultiQC'],
+    ['qualimap', '2.3', 'Qualimap'],
+    ['bowtie', '1.3.1', 'Bowtie (small RNA)'],
+    ['openjdk', '25.0.2', 'Java (for Qualimap)'],
+    ['r-base', '4.5.3', 'R'],
+    // Not used by RNAflow directly, but MultiQC runs on it and the solver
+    // otherwise picks a different Python per platform
+    ['python', '3.14.8', 'Python']
+  ],
+  rpkgs: [
+    ['bioconductor-deseq2', '1.50.2', 'DESeq2'],
+    ['bioconductor-tximport', '1.38.2', 'tximport'],
+    ['bioconductor-apeglm', '1.32.0', 'apeglm'],
+    ['bioconductor-limma', '3.66.0', 'limma'],
+    ['bioconductor-edger', '4.8.2', 'edgeR'],
+    ['bioconductor-sva', '3.58.0', 'sva'],
+    ['bioconductor-clusterprofiler', '4.18.4', 'clusterProfiler'],
+    ['bioconductor-enrichplot', '1.30.5', 'enrichplot'],
+    ['bioconductor-reactomepa', '1.54.0', 'ReactomePA'],
+    ['bioconductor-fgsea', '1.36.2', 'fgsea'],
+    // MSigDB gene sets for fgsea; downloads them once on first use
+    ['r-msigdbr', '26.1.1', 'msigdbr'],
+    ['r-ggplot2', '4.0.3', 'ggplot2'],
+    ['r-pheatmap', '1.0.13', 'pheatmap'],
+    ['r-ggrepel', '0.9.8', 'ggrepel'],
+    ['r-dplyr', '1.2.1', 'dplyr'],
+    ['r-patchwork', '1.3.2', 'patchwork'],
+    ['r-rcolorbrewer', '1.1_3', 'RColorBrewer'],
+    // Reading count tables supplied as CSV / TSV / Excel
+    ['r-readr', '2.2.0', 'readr'],
+    ['r-readxl', '1.5.0.1', 'readxl']
+  ],
+  // OrgDb packages download 100–400 MB each after install, so only the one
+  // for the project's organism is added (see orgDbInstallCmd).
+  orgdb: '3.22.0'
+};
+
+function envYaml() {
+  const dep = ([pkg, ver]) => `  - ${pkg}=${ver}`;
+  return [
+    `# RNAflow pinned environment, release ${RNAFLOW_ENV.release}`,
+    `name: ${RNAFLOW_ENV.name}`,
+    'channels:',
+    '  - conda-forge',
+    '  - bioconda',
+    'dependencies:',
+    ...RNAFLOW_ENV.tools.map(dep),
+    ...RNAFLOW_ENV.rpkgs.map(dep)
+  ].join('\n');
+}
+
+// Writes the file and creates the environment, or brings an existing one
+// exactly in line (--prune removes anything an older install added).
+function envInstallCmd() {
+  const n = RNAFLOW_ENV.name;
+  return [
+    `# Write RNAflow's pinned environment file — every version is fixed`,
+    `mkdir -p ~/.rnaflow`,
+    `cat > ~/.rnaflow/environment.yml <<'EOF'`,
+    envYaml(),
+    `EOF`,
+    ``,
+    `# Create the environment, or update an existing one to match exactly`,
+    `if conda env list | grep -q "^${n} "; then`,
+    `  conda env update -n ${n} -f ~/.rnaflow/environment.yml --prune`,
+    `else`,
+    `  conda env create -n ${n} -f ~/.rnaflow/environment.yml`,
+    `fi`,
+    `conda activate ${n}`,
+    ``,
+    `# Verify — each line should print the version pinned above`,
+    `fastqc --version && fastp --version && salmon --version && samtools --version | head -1`,
+    `Rscript -e 'cat("R", as.character(getRversion()), "· DESeq2", as.character(packageVersion("DESeq2")), "\\n")'`
+  ].join('\n');
+}
+
+function orgDbInstallCmd(db) {
+  if (!db) return '# No Bioconductor OrgDb exists for this organism — see the note below.';
+  return `# One-time: the annotation database for your organism (downloads 100–400 MB)\n` +
+         `conda install -n ${RNAFLOW_ENV.name} -c conda-forge -c bioconda -y \\\n` +
+         `  bioconductor-${db.toLowerCase()}=${RNAFLOW_ENV.orgdb}`;
+}
+
+// Recorded next to the results, so a figure can always be traced back to
+// the exact software that produced it.
+function versionsCmd(base) {
+  return `# Record the exact software behind these results\n` +
+         `conda list --explicit > ${base}/results/conda_environment_lock.txt\n` +
+         `{ echo "RNAflow environment release ${RNAFLOW_ENV.release}"; date; \\\n` +
+         `  fastqc --version; fastp --version 2>&1; salmon --version; hisat2 --version | head -1; \\\n` +
+         `  samtools --version | head -1; featureCounts -v 2>&1 | grep -i featurecounts; \\\n` +
+         `  multiqc --version; R --version | head -1; } > ${base}/results/software_versions.txt\n` +
+         `cat ${base}/results/software_versions.txt`;
+}
+
+// MSigDB Hallmark via msigdbr: human sets, mapped to these species through
+// orthologs. Plants and Yarrowia are not covered.
+const MSIGDB_SPECIES = {
+  human: 'Homo sapiens', mouse: 'Mus musculus', rat: 'Rattus norvegicus',
+  zebrafish: 'Danio rerio', fly: 'Drosophila melanogaster',
+  worm: 'Caenorhabditis elegans', yeast: 'Saccharomyces cerevisiae'
+};
+
+// Preranked GSEA on the 50 Hallmark processes, with an enrichment ranking
+// plot (running score, hits, ranked metric) for each top pathway.
+function fgseaR(base, orgKey) {
+  const species = MSIGDB_SPECIES[orgKey];
+  if (!species) return `# MSigDB Hallmark gene sets cover animals and yeast only, not this organism.\n` +
+    `# Use the GO and KEGG analyses above instead.`;
+  return `library(fgsea); library(msigdbr); library(ggplot2); library(patchwork)\n` +
+    `base_path <- "${base}"\n\n` +
+    `# Rank every tested gene by the DESeq2 Wald statistic. Hallmark sets use gene\n` +
+    `# symbols, so genes are named by the symbol column the DESeq2 step writes.\n` +
+    `res <- read.csv(paste0(base_path, "/results/deseq2_results.csv"))\n` +
+    `sym <- if (!is.null(res$symbol)) res$symbol else res$gene\n` +
+    `ok <- !is.na(res$stat) & !is.na(sym) & sym != "" & !grepl("^ENS", sym)\n` +
+    `if (sum(ok) < 1000) stop("Fewer than 1,000 genes have a gene symbol. Re-run the reference and ",\n` +
+    `                         "DESeq2 steps with this version so results carry gene names.")\n` +
+    `ranks <- tapply(res$stat[ok], sym[ok], function(x) x[which.max(abs(x))])  # one value per symbol\n` +
+    `ranks <- sort(setNames(as.numeric(ranks), names(ranks)), decreasing=TRUE)\n` +
+    `cat(length(ranks), "genes ranked\\n")\n\n` +
+    `# The 50 Hallmark processes (MSigDB). msigdbr downloads them once, on first use.\n` +
+    `hs <- msigdbr(db_species="HS", species="${species}", collection="H")\n` +
+    `pathways <- split(hs$gene_symbol, hs$gs_name)\n` +
+    `set.seed(42)\n` +
+    `fg <- fgsea(pathways, ranks, minSize=15, maxSize=500)\n` +
+    `fg <- fg[order(fg$padj), ]\n` +
+    `cat("Hallmark pathways at padj < 0.05:", sum(fg$padj < 0.05, na.rm=TRUE), "\\n")\n` +
+    `print(head(fg[, c("pathway", "NES", "padj", "size")], 10))\n` +
+    `out <- as.data.frame(fg)\n` +
+    `out$leadingEdge <- vapply(fg$leadingEdge, paste, "", collapse="/")\n` +
+    `write.csv(out, paste0(base_path, "/results/fgsea_Hallmark.csv"), row.names=FALSE)\n\n` +
+    `# Normalised enrichment scores of the significant pathways\n` +
+    `top <- head(out[!is.na(out$padj) & out$padj < 0.05, ], 25)\n` +
+    `if (nrow(top)) {\n` +
+    `  top$label <- gsub("_", " ", sub("^HALLMARK_", "", top$pathway))\n` +
+    `  p <- ggplot(top, aes(NES, reorder(label, NES), fill = NES > 0)) + geom_col() +\n` +
+    `    scale_fill_manual(values = c("TRUE" = "#c94e00", "FALSE" = "#0969da"),\n` +
+    `                      labels = c("TRUE" = "up", "FALSE" = "down"), name = NULL) +\n` +
+    `    labs(x = "Normalised enrichment score", y = NULL, title = "MSigDB Hallmark, padj < 0.05") +\n` +
+    `    theme_minimal(base_size = 12)\n` +
+    `  ggsave(paste0(base_path, "/results/fgsea_Hallmark_NES.png"), p, width = 9, height = 7, dpi = 300)\n\n` +
+    `  # Enrichment ranking plots: running score, gene hits and ranked metric,\n` +
+    `  # on one shared rank axis (the standard three-panel GSEA figure)\n` +
+    `  rank_plot <- function(pw) {\n` +
+    `    d <- plotEnrichmentData(pathways[[pw]], ranks)\n` +
+    `    x <- scale_x_continuous(limits = c(0, length(ranks)), expand = c(0, 0))\n` +
+    `    bare <- theme(axis.text.x = element_blank(), axis.title.x = element_blank(), panel.grid.minor = element_blank())\n` +
+    `    es <- ggplot(d$curve, aes(rank, ES)) + geom_hline(yintercept = 0, colour = "grey60") +\n` +
+    `      geom_line(colour = "#1a7f37", linewidth = 0.8) + x +\n` +
+    `      labs(title = gsub("_", " ", sub("^HALLMARK_", "", pw)), y = "Enrichment\\nscore") +\n` +
+    `      theme_minimal(base_size = 9) + bare\n` +
+    `    hits <- ggplot(d$ticks, aes(rank, 0)) + geom_segment(aes(xend = rank, yend = 1), linewidth = 0.2) + x +\n` +
+    `      scale_y_continuous(breaks = NULL) + labs(y = "Hits") + theme_minimal(base_size = 9) + bare +\n` +
+    `      theme(panel.grid = element_blank())\n` +
+    `    metric <- ggplot(d$stats, aes(rank, stat, fill = stat > 0)) + geom_col(width = 1) + x +\n` +
+    `      scale_fill_manual(values = c("TRUE" = "#c94e00", "FALSE" = "#0969da"), guide = "none") +\n` +
+    `      labs(x = "Rank in ordered gene list", y = "Ranked\\nmetric") + theme_minimal(base_size = 9) +\n` +
+    `      theme(panel.grid.minor = element_blank())\n` +
+    `    es / hits / metric + plot_layout(heights = c(3, 0.6, 1.4))\n` +
+    `  }\n` +
+    `  ggsave(paste0(base_path, "/results/fgsea_Hallmark_ranking.png"),\n` +
+    `         wrap_plots(lapply(head(top$pathway, 6), rank_plot), ncol = 2), width = 11, height = 12, dpi = 300)\n` +
+    `  cat("Saved fgsea_Hallmark.csv, fgsea_Hallmark_NES.png and fgsea_Hallmark_ranking.png\\n")\n` +
+    `} else cat("No Hallmark pathway reached padj < 0.05.\\n")\n`;
+}
+// ── POST-QUANTIFICATION QC ────────────────────────────────────────────────
+// FastQC only looks at reads. These checks look at where the reads went:
+// mapping rate, rRNA and mitochondrial share, and (genome route) read origin
+// and 5'–3' coverage bias. Everything lands in one MultiQC report with an
+// RNAflow summary table carrying a PASS / WARN verdict per sample.
+const QC_LIMITS = { mapped: 70, rrna: 10, mito: 30 };
+
+function postQcCmd({ base, all, salmonMode, paired, strand, gtf, T }) {
+  const samples = all.length ? all.join(' ') : 'SAMPLE';
+  const table = `${base}/qc/rnaflow_qc_mqc.tsv`;
+  const L = QC_LIMITS;
+  // MultiQC reads this header and shows the file as a table
+  const header =
+    `{ echo "# id: 'rnaflow_qc'"\n` +
+    `  echo "# section_name: 'RNAflow QC summary'"\n` +
+    `  echo "# description: 'PASS needs mapped >= ${L.mapped}%, rRNA < ${L.rrna}%, mitochondrial < ${L.mito}% of reads.'"\n` +
+    `  echo "# plot_type: 'table'"\n` +
+    `  printf 'Sample\\tMapped (%%)\\trRNA (%%)\\tMito (%%)\\tVerdict\\n'\n`;
+  const verdict =
+    `v = "PASS"; if (map < ${L.mapped}) v = "WARN: low mapping"; ` +
+    `else if (rp >= ${L.rrna}) v = "WARN: rRNA"; else if (mp >= ${L.mito}) v = "WARN: mitochondrial"; ` +
+    `printf "%s\\t%.1f\\t%.2f\\t%.2f\\t%s\\n", s, map, rp, mp, v`;
+  const show =
+    `\necho; grep -v '^#' ${table} | column -t -s "$(printf '\\t')"\n` +
+    `grep -q WARN ${table} && echo "⚠ Some samples need a look — see the Verdict column." || echo "✓ All samples pass."\n`;
+
+  if (salmonMode) {
+    return `# ─── Mapping, rRNA and mitochondrial share per sample ───\n` +
+      `# rRNA = reads on rRNA / Mt_rRNA transcripts; mito = reads on the mitochondrial chromosome\n` +
+      header +
+      `  for s in ${samples}; do\n` +
+      `    q=${base}/counts/quants/$s\n` +
+      `    map=$(grep -o '"percent_mapped": *[0-9.]*' $q/aux_info/meta_info.json | grep -o '[0-9.]*$')\n` +
+      `    awk -v s=$s -v map="$map" -F'\\t' '\n` +
+      `      NR == FNR { bt[$1] = $2; chr[$1] = $3; next }\n` +
+      `      FNR > 1   { t += $5; if (bt[$1] ~ /rRNA/) r += $5\n` +
+      `                  if (chr[$1] ~ /^(MT|Mt|M|chrM|Mito|mitochondrion_genome)$/) m += $5 }\n` +
+      `      END { rp = t ? 100 * r / t : 0; mp = t ? 100 * m / t : 0; ${verdict} }' \\\n` +
+      `      ${base}/reference/tx_info.tsv $q/quant.sf\n` +
+      `  done; } > ${table}\n` +
+      show +
+      `\n# ─── One report: reads, trimming, Salmon and the summary above ───\n` +
+      `multiqc ${base}/qc ${base}/counts/quants -o ${base}/qc --filename rnaflow_final_qc --force\n` +
+      openCmd(`${base}/qc/rnaflow_final_qc.html`);
+  }
+
+  // Genome route. Qualimap needs the protocol spelled out; with auto
+  // detection the counts step already wrote what it measured.
+  const proto = { '0': 'non-strand-specific', '1': 'strand-specific-forward', '2': 'strand-specific-reverse' };
+  const strandLine = strand === 'auto'
+    ? `STRAND=$(grep -o -- '-s [012]' ${base}/counts/strandedness.txt | tail -1 | cut -c4)\n`
+    : `STRAND=${strand}\n`;
+  return `${strandLine}` +
+    `case $STRAND in 1) PROTO=${proto['1']};; 2) PROTO=${proto['2']};; *) PROTO=${proto['0']};; esac\n\n` +
+    `# ─── Where reads land, and 5'–3' coverage bias (Qualimap) ───\n` +
+    `# Exonic should be well above 60%; high intronic suggests pre-mRNA or DNA contamination.\n` +
+    `mkdir -p ${base}/qc/qualimap\n` +
+    `for s in ${samples}; do\n` +
+    `  qualimap rnaseq -bam ${base}/aligned/$s.bam -gtf ${gtf} \\\n` +
+    `    -outdir ${base}/qc/qualimap/$s -p $PROTO ${paired ? '-pe ' : ''}--java-mem-size=4G \\\n` +
+    `    > ${base}/qc/qualimap/$s.log 2>&1 || echo "Qualimap failed for $s — see ${base}/qc/qualimap/$s.log"\n` +
+    `done\n\n` +
+    `# ─── rRNA share: count reads per gene biotype ───\n` +
+    `featureCounts -a ${gtf} -g gene_biotype -o ${base}/counts/biotype_counts.txt \\\n` +
+    `  -T ${T} -s $STRAND ${paired ? '-p --countReadPairs ' : ''}\\\n` +
+    `  ${all.map(s => `${base}/aligned/${s}.bam`).join(' ') || base + '/aligned/SAMPLE.bam'} > /dev/null 2>&1\n\n` +
+    `# ─── Mapping, rRNA and mitochondrial share per sample ───\n` +
+    header +
+    `  col=7\n` +
+    `  for s in ${samples}; do\n` +
+    `    map=$(grep -o '[0-9.]*% overall alignment rate' ${base}/aligned/\${s}_summary.txt | grep -o '^[0-9.]*')\n` +
+    `    mito=$(samtools idxstats ${base}/aligned/$s.bam | awk '$1 ~ /^(MT|Mt|M|chrM|Mito|mitochondrion_genome)$/ {m += $3} {t += $3} END {print t ? 100 * m / t : 0}')\n` +
+    `    awk -v s=$s -v map="$map" -v mp="$mito" -v c=$col -F'\\t' '\n` +
+    `      NR > 2 { t += $c; if ($1 ~ /rRNA/) r += $c }\n` +
+    `      END { rp = t ? 100 * r / t : 0; ${verdict} }' ${base}/counts/biotype_counts.txt\n` +
+    `    col=$((col + 1))\n` +
+    `  done; } > ${table}\n` +
+    show +
+    `\n# ─── One report: reads, trimming, alignment, Qualimap and the summary above ───\n` +
+    `multiqc ${base}/qc ${base}/aligned ${base}/counts -o ${base}/qc --filename rnaflow_final_qc --force\n` +
+    openCmd(`${base}/qc/rnaflow_final_qc.html`);
+}
+
+function renderEnvBlocks() {
+  const install = envInstallCmd();
+  ['cmd-install-env', 'cmd-fix-env', 'cmd-recreate-env'].forEach(id => set(id, install));
+  const rows = document.getElementById('env-version-rows');
+  if (rows) {
+    rows.innerHTML = [...RNAFLOW_ENV.tools, ...RNAFLOW_ENV.rpkgs.slice(0, 2)]
+      .map(([, ver, label]) => `<tr><td>${label}</td><td>${ver}</td><td>Run the fix command below</td></tr>`)
+      .join('');
+  }
+}
 
 // Keep the advanced pages (multi-factor, batch, GSEA) in step with the
 // project instead of leaving them pinned to the yeast demo values.
@@ -3170,9 +3534,15 @@ function syncAdvancedPages(base, ctrl, treat, nCtrl, nTreat, orgKey) {
 
   const a = ORG_ANNOT[orgKey] || ORG_ANNOT.custom;
   put('gs-orgdb',   a.db    || 'NULL');
+  put('gs-orgdb-lib',  a.db || 'clusterProfiler');
+  put('gs-orgdb-name', a.db || 'no OrgDb');
   put('gs-keytype', a.key   || 'SYMBOL');
   put('gs-kegg',    a.kegg  || 'PASTE_KEGG_CODE');
   put('gs-react',   a.react || 'NOT_SUPPORTED');
+  // clusterProfiler, enrichplot, ReactomePA and fgsea ship with the pinned
+  // environment; only the organism's annotation database is added here.
+  put('gs-install', orgDbInstallCmd(a.db));
+  put('cmd-fgsea', fgseaR(base, orgKey));
 
   const warn = document.getElementById('gs-orgdb-warning');
   if (warn) {
@@ -3189,7 +3559,8 @@ function syncAdvancedPages(base, ctrl, treat, nCtrl, nTreat, orgKey) {
 // to build a genome index — the step that stops most beginners on human data.
 const METHOD_BLURB = {
   align:  'Splice-aware genome alignment. Needed for novel transcripts, coverage tracks or variant work. Building the index needs a lot of RAM and time.',
-  salmon: 'Quantifies against the transcriptome. Roughly 20× faster, runs on a laptop, no genome index. Gene-level counts come through tximport.'
+  salmon: 'Quantifies against the transcriptome. Roughly 20× faster, runs on a laptop, no genome index. Gene-level counts come through tximport.',
+  smallrna: 'For miRNA libraries (reads of ~18–30 nt). Trims the kit adapter, counts reads on the mature miRNAs in miRBase with Bowtie, then runs DESeq2 on the miRNA counts. Single-end; read 2 is not used.'
 };
 
 // Ensembl publishes cDNA next to the DNA it already has a URL for, so the
@@ -3199,6 +3570,41 @@ function cdnaUrlFrom(genomeUrl) {
   return genomeUrl
     .replace('/dna/', '/cdna/')
     .replace(/\.dna\.(toplevel|primary_assembly)\.fa\.gz$/, '.cdna.all.fa.gz');
+}
+
+// Non-coding transcripts (rRNA, lncRNA, snoRNA…) sit in a separate Ensembl
+// file. Without them rRNA contamination cannot be measured and lncRNAs are
+// never quantified.
+function ncrnaUrlFrom(genomeUrl) {
+  if (!genomeUrl || !/ensembl/i.test(genomeUrl)) return '';
+  return genomeUrl
+    .replace('/dna/', '/ncrna/')
+    .replace(/\.dna\.(toplevel|primary_assembly)\.fa\.gz$/, '.ncrna.fa.gz');
+}
+
+// Reference downloads are slow (Ensembl often serves ~100 KB/s), so a re-run
+// keeps any file that is already complete. gzip -t catches a download that
+// was cut off, which is then fetched again.
+function fetchGz(file, url) {
+  return `[ -s ${file} ] && gzip -t ${file} 2>/dev/null && echo "Already have ${file}" \\\n` +
+         `  || curl -fL -o ${file} "${url}"`;
+}
+// Same, for files RNAflow unpacks after download (genome FASTA, GTF)
+function fetchGunzip(file, url) {
+  return `[ -s ${file} ] && echo "Already have ${file}" \\\n` +
+         `  || { curl -fL -o ${file}.gz "${url}" && gunzip -f ${file}.gz; }`;
+}
+
+// gene_id -> gene name from the GTF, so results, plots and the explorer show
+// DUSP1 rather than ENSG00000120129. Genes without a name keep their ID.
+// grep first: macOS awk takes ~50 s to split a human GTF, grep + awk 0.6 s.
+function geneNamesCmd(base, org) {
+  return `# ─── Gene names, for readable results and plots ───\n` +
+    `grep "$(printf '\\tgene\\t')" ${base}/reference/${org}_annotation.gtf | awk -F'\\t' '$3 == "gene" { a = $9\n` +
+    `  i = index(a, "gene_id \\""); id = substr(a, i + 9); id = substr(id, 1, index(id, "\\"") - 1)\n` +
+    `  nm = id; j = index(a, "gene_name \\""); if (j) { nm = substr(a, j + 11); nm = substr(nm, 1, index(nm, "\\"") - 1) }\n` +
+    `  print id "\\t" nm }' > ${base}/reference/gene_names.tsv\n` +
+    `wc -l < ${base}/reference/gene_names.tsv   # genes named\n\n`;
 }
 
 function applyMethod() {
@@ -3212,21 +3618,26 @@ function applyMethod() {
     const el = document.getElementById(id);
     if (el) el.style.opacity = m === 'salmon' ? '0.55' : '';
   });
+  const af = document.getElementById('adapter-field');
+  if (af) af.style.display = m === 'smallrna' ? '' : 'none';
   updateAll();
 }
 
 function applyDataSource() {
-  const local = val('cfg-datasource', 'sra') === 'local';
-  const lb = document.getElementById('ds-local-box');
-  const sb = document.getElementById('ds-sra-box');
-  if (lb) lb.style.display = local ? '' : 'none';
-  if (sb) sb.style.display = local ? 'none' : '';
-  // Sample inputs mean different things in the two modes
-  document.querySelectorAll('#ctrl-rows input, #treat-rows input').forEach(i => {
-    i.placeholder = local ? 'file name, no extension' : 'SRR/ERR accession';
+  const ds = val('cfg-datasource', 'sra');
+  const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+  show('ds-local-box', ds === 'local');
+  show('ds-counts-box', ds === 'counts');
+  show('ds-sra-box', ds === 'sra');
+  // Sample inputs mean different things in each mode
+  const hint = { local: 'file name, no extension', counts: 'column name in your table', sra: 'SRR/ERR accession' }[ds];
+  document.querySelectorAll('#ctrl-rows input, #treat-rows input').forEach(i => { i.placeholder = hint; });
+  // A count table skips everything up to differential expression
+  const fastqSteps = ['nav-download', 'nav-qc', 'nav-trim', 'nav-genome', 'nav-align', 'nav-counts'];
+  fastqSteps.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.opacity = (ds === 'counts' || (ds === 'local' && id === 'nav-download')) ? '0.55' : '';
   });
-  const dlNav = document.getElementById('nav-download');
-  if (dlNav) dlNav.style.opacity = local ? '0.55' : '';
   updateAll();
 }
 
@@ -3407,12 +3818,16 @@ function updateAll() {
   const gUrl   = val('cfg-genome-url', '');
   const gtfUrl = val('cfg-gtf-url', '');
   const paired = val('cfg-readtype', 'single') === 'paired';
-  const strand = val('cfg-strand', '0');
+  const strand = val('cfg-strand', 'auto');
   const cSamp  = getSamples('ctrl-rows');
   const tSamp  = getSamples('treat-rows');
   const all    = [...cSamp, ...tSamp];
   const isLocal = val('cfg-datasource', 'sra') === 'local';
   const salmonMode = val('cfg-method', 'align') === 'salmon';
+  // Starting from someone else's count table skips everything before DE
+  const countsMode = val('cfg-datasource', 'sra') === 'counts';
+  // miRNA libraries: trimmed, counted on miRBase, then DE on the miRNA table
+  const smallMode = !countsMode && val('cfg-method', 'align') === 'smallrna';
   const raw    = rawDir(base);
   const ext    = fqExt();
   const T      = threads();
@@ -3420,6 +3835,10 @@ function updateAll() {
   // Read paths for a sample, honouring data source + extension + read type
   const r1 = s => paired ? `${raw}/${s}_1${ext}` : `${raw}/${s}${ext}`;
   const r2 = s => `${raw}/${s}_2${ext}`;
+  // Quote for the shell but keep a leading ~ outside the quotes: "~/x" is a
+  // literal folder called "~", so with the default SRA source and Desktop
+  // location FastQC and fastp were handed paths that do not exist.
+  const qp = p => p.startsWith('~/') ? `~/"${p.slice(2)}"` : `"${p}"`;
 
   // Labels
   document.getElementById('ctrl-name-label').textContent = ctrl;
@@ -3455,8 +3874,8 @@ function updateAll() {
       `# RNAflow reads directly from:\n#   ${raw}\n\n` +
       `# Confirm every sample below is present:\n` +
       (all.length ? all.map(s => paired
-        ? `ls -lh "${r1(s)}" "${r2(s)}"`
-        : `ls -lh "${r1(s)}"`).join('\n')
+        ? `ls -lh ${qp(r1(s))} ${qp(r2(s))}`
+        : `ls -lh ${qp(r1(s))}`).join('\n')
         : '# (add your sample names in the Experiment design section)'));
     set('cmd-check-dl', `ls -lh ${raw}/`);
   } else {
@@ -3474,9 +3893,10 @@ function updateAll() {
 
   // FastQC
   let fqc = '';
+  // --outdir, not -o: FastQC 0.13 dropped the short form
   all.forEach(s => fqc += paired
-    ? `fastqc "${r1(s)}" "${r2(s)}" -o ${base}/qc/ -t ${T}\n`
-    : `fastqc "${r1(s)}" -o ${base}/qc/ -t ${T}\n`);
+    ? `fastqc --outdir ${base}/qc/ -t ${T} ${qp(r1(s))} ${qp(r2(s))}\n`
+    : `fastqc --outdir ${base}/qc/ -t ${T} ${qp(r1(s))}\n`);
   set('cmd-fastqc', envWrap(fqc.trim(), 'step3_fastqc'));
   set('cmd-multiqc', envWrap(
     `multiqc ${base}/qc/ -o ${base}/qc/ --force\n\n${openCmd(base + '/qc/multiqc_report.html')}`,
@@ -3486,10 +3906,10 @@ function updateAll() {
   let trim = '';
   all.forEach(s => {
     if (paired) {
-      trim += `fastp -i "${r1(s)}" -I "${r2(s)}" \\\n`;
+      trim += `fastp -i ${qp(r1(s))} -I ${qp(r2(s))} \\\n`;
       trim += `      -o ${base}/trimmed/${s}_1_trimmed.fastq.gz -O ${base}/trimmed/${s}_2_trimmed.fastq.gz \\\n`;
     } else {
-      trim += `fastp -i "${r1(s)}" \\\n`;
+      trim += `fastp -i ${qp(r1(s))} \\\n`;
       trim += `      -o ${base}/trimmed/${s}_trimmed.fastq.gz \\\n`;
     }
     trim += `      --trim_front1 5 --qualified_quality_phred 20 --length_required 36 -w ${Math.min(parseInt(T)||4, 16)} \\\n`;
@@ -3519,29 +3939,48 @@ function updateAll() {
     const cdna = cdnaUrlFrom(gUrl);
     let gCmd = `# ─── Download the TRANSCRIPTOME (cDNA) ───\n`;
     gCmd += `# Salmon quantifies against transcripts, so no genome index is needed.\n`;
-    gCmd += `cd ${base}/genome\ncurl -L -o ${org}_cdna.fa.gz "${cdna || 'PASTE_YOUR_CDNA_URL_HERE'}"\n\n`;
+    gCmd += `cd ${base}/genome\n${fetchGz(`${org}_cdna.fa.gz`, cdna || 'PASTE_YOUR_CDNA_URL_HERE')}\n\n`;
+    const ncrna = ncrnaUrlFrom(gUrl);
+    gCmd += `# ─── Add the non-coding transcripts (rRNA, lncRNA, …) ───\n`;
+    gCmd += `# Needed to measure rRNA contamination and to quantify lncRNAs.\n`;
+    gCmd += `# A few species have no ncRNA file; the cDNA alone still works.\n`;
+    gCmd += `{ ${fetchGz(`${org}_ncrna.fa.gz`, ncrna || 'PASTE_YOUR_NCRNA_URL_HERE')}; } \\\n`;
+    gCmd += `  || { echo "No ncRNA file found — continuing with cDNA only"; : > ${org}_ncrna.fa.gz; }\n`;
+    gCmd += `cat ${org}_cdna.fa.gz ${org}_ncrna.fa.gz > ${org}_transcriptome.fa.gz\n\n`;
     if (!cdna) {
       gCmd += `# ⚠ Could not derive a cDNA URL from your genome URL.\n`;
       gCmd += `#   Find it on Ensembl under "Download transcript sequences (FASTA)"\n`;
       gCmd += `#   and paste it above — the file ends in .cdna.all.fa.gz\n\n`;
     }
     gCmd += `# ─── Download gene annotation GTF (used for gene-level summaries) ───\n`;
-    gCmd += `cd ${base}/reference\ncurl -L -o ${org}_annotation.gtf.gz "${gtfUrl}"\ngunzip -f ${base}/reference/${org}_annotation.gtf.gz\n\n`;
+    gCmd += `cd ${base}/reference\n${fetchGunzip(`${org}_annotation.gtf`, gtfUrl)}\n\n`;
+    gCmd += geneNamesCmd(base, org);
     gCmd += `# ─── Build the transcript → gene map straight from the FASTA headers ───\n`;
-    gCmd += `# Ensembl cDNA headers carry "gene:ENSG…", so no extra database is needed.\n`;
-    gCmd += `zcat < ${base}/genome/${org}_cdna.fa.gz | grep "^>" \\\n`;
-    gCmd += `  | sed -E 's/^>([^ ]+).*gene:([^ ]+).*/\\1,\\2/' > ${base}/reference/tx2gene.csv\n`;
+    gCmd += `# Ensembl cDNA headers carry "gene:ENSG….12", so no extra database is needed.\n`;
+    gCmd += `# Versions are dropped from both IDs: tximport's ignoreTxVersion strips them\n`;
+    gCmd += `# from the Salmon output, so a versioned map matches nothing (v3.0 failed\n`;
+    gCmd += `# here), and unversioned gene IDs match annotation databases and the\n`;
+    gCmd += `# HISAT2 route.\n`;
+    gCmd += `zcat < ${base}/genome/${org}_transcriptome.fa.gz | grep "^>" \\\n`;
+    gCmd += `  | sed -E 's/^>([^ ]+).*gene:([^ ]+).*/\\1,\\2/; s/\\.[0-9]+,/,/; s/\\.[0-9]+$//' > ${base}/reference/tx2gene.csv\n`;
+    gCmd += `# Transcript biotype and chromosome, for the rRNA / mitochondrial QC\n`;
+    gCmd += `# (awk, not sed: macOS sed writes \\t as a literal "t")\n`;
+    gCmd += `zcat < ${base}/genome/${org}_transcriptome.fa.gz | awk '/^>/{\n`;
+    gCmd += `  split($3, loc, ":"); bt = "";\n`;
+    gCmd += `  for (i = 4; i <= NF; i++) if ($i ~ /^transcript_biotype:/) bt = substr($i, 20);\n`;
+    gCmd += `  if (bt != "") print substr($1, 2) "\\t" bt "\\t" loc[3] }' > ${base}/reference/tx_info.tsv\n`;
     gCmd += `wc -l < ${base}/reference/tx2gene.csv   # transcripts mapped\nhead -3 ${base}/reference/tx2gene.csv`;
     set('cmd-genome', envWrap(gCmd, 'step5_transcriptome'));
 
     set('cmd-index', envWrap(
       `# Build the Salmon index — minutes, not hours, and modest on memory\n` +
-      `salmon index -t ${base}/genome/${org}_cdna.fa.gz \\\n` +
+      `salmon index -t ${base}/genome/${org}_transcriptome.fa.gz \\\n` +
       `             -i ${base}/genome/${org}_salmon_index \\\n` +
       `             -k 31 -p ${T}\n\nls -lh ${base}/genome/${org}_salmon_index/`, 'step5_index'));
   } else {
-    let gCmd = `# ─── Download genome FASTA ───\ncd ${base}/genome\ncurl -L -o ${org}_genome.fa.gz "${gUrl}"\ngunzip -f ${base}/genome/${org}_genome.fa.gz\n\n`;
-    gCmd += `# ─── Download gene annotation GTF ───\ncd ${base}/reference\ncurl -L -o ${org}_annotation.gtf.gz "${gtfUrl}"\ngunzip -f ${base}/reference/${org}_annotation.gtf.gz\n\n`;
+    let gCmd = `# ─── Download genome FASTA ───\ncd ${base}/genome\n${fetchGunzip(`${org}_genome.fa`, gUrl)}\n\n`;
+    gCmd += `# ─── Download gene annotation GTF ───\ncd ${base}/reference\n${fetchGunzip(`${org}_annotation.gtf`, gtfUrl)}\n\n`;
+    gCmd += geneNamesCmd(base, org);
     gCmd += `# ─── Verify (genome ~5–800 MB, annotation ~5–50 MB) ───\nls -lh ${base}/genome/ && ls -lh ${base}/reference/`;
     set('cmd-genome', envWrap(gCmd, 'step5_genome'));
 
@@ -3562,6 +4001,7 @@ function updateAll() {
       q += `             --validateMappings --gcBias --seqBias -p ${T} \\\n`;
       q += `             -o ${base}/counts/quants/${s}\n\n`;
     });
+    q += versionsCmd(base);
     set('cmd-align', envWrap(q.trim(), 'step6_quant'));
     set('cmd-bam', envWrap(
       `# Salmon produced no BAM files, so there is nothing to sort or index.\n` +
@@ -3594,6 +4034,7 @@ function updateAll() {
       align += `samtools index -@ ${T} ${base}/aligned/${s}.bam\n\n`;
       bam += `samtools flagstat -@ ${T} ${base}/aligned/${s}.bam | head -5\n`;
     });
+    align += versionsCmd(base);
     set('cmd-align', envWrap(align.trim(), 'step6_align'));
     set('cmd-bam', envWrap(
       `# Alignment already produced sorted, indexed BAMs.\n` +
@@ -3604,22 +4045,110 @@ function updateAll() {
 
     const pe  = paired ? '\n  -p --countReadPairs \\' : '';
     const bams = all.map(s=>`  ${base}/aligned/${s}.bam`).join(' \\\n');
+    const gtf  = `${base}/reference/${org}_annotation.gtf`;
+    // Counting with the wrong strand setting silently discards up to half the
+    // reads (or counts antisense reads as sense), so by default the strand is
+    // measured: count the first sample both ways round, the same rule
+    // nf-core/rnaseq applies (>= 80% one way means stranded).
+    let detect = '';
+    if (strand === 'auto') {
+      const first = `${base}/aligned/${all[0] || 'SAMPLE'}.bam`;
+      detect =
+        `# ─── Detect strandedness from ${all[0] || 'the first sample'} ───\n` +
+        `mkdir -p ${base}/counts/strand_check\n` +
+        `for s in 1 2; do\n` +
+        `  featureCounts -a ${gtf} -o ${base}/counts/strand_check/s$s.txt \\\n` +
+        `    -T ${T} -s $s ${paired ? '-p --countReadPairs ' : ''}${first} > /dev/null 2>&1\n` +
+        `done\n` +
+        `fwd=$(awk '$1=="Assigned"{print $2}' ${base}/counts/strand_check/s1.txt.summary)\n` +
+        `rev=$(awk '$1=="Assigned"{print $2}' ${base}/counts/strand_check/s2.txt.summary)\n` +
+        `STRAND=$(awk -v f="$fwd" -v r="$rev" 'BEGIN{ p = (f+r) ? f/(f+r) : 0.5;\n` +
+        `  if (p >= 0.8) print 1; else if (p <= 0.2) print 2; else print 0 }')\n` +
+        `echo "Strandedness: forward=$fwd reverse=$rev -> featureCounts -s $STRAND" \\\n` +
+        `  | tee ${base}/counts/strandedness.txt\n` +
+        `awk -v f="$fwd" -v r="$rev" 'BEGIN{ p = (f+r) ? f/(f+r) : 0.5;\n` +
+        `  if ((p > 0.2 && p < 0.4) || (p > 0.6 && p < 0.8))\n` +
+        `    print "WARNING: strandedness is ambiguous — check your library kit and set it on Configure" }'\n\n` +
+        `# ─── Count every sample ───\n`;
+    }
     set('cmd-counts', envWrap(
-      `featureCounts \\\n  -a ${base}/reference/${org}_annotation.gtf \\\n  -o ${base}/counts/gene_counts_all.txt \\\n  -T ${T} \\\n  -s ${strand} \\${pe}\n${bams}`, 'step7_counts'));
+      `${detect}featureCounts \\\n  -a ${gtf} \\\n  -o ${base}/counts/gene_counts_all.txt \\\n  -T ${T} \\\n  -s ${strand === 'auto' ? '$STRAND' : strand} \\${pe}\n${bams}`, 'step7_counts'));
     set('cmd-preview',
       `grep -v "^#" ${base}/counts/gene_counts_all.txt | awk '{print $1, $7, $8}' | head -20 | column -t`);
+  }
+
+  // QC summary — after quantification, before any statistics
+  set('cmd-postqc', envWrap(postQcCmd({
+    base, all, salmonMode, paired, strand, T,
+    gtf: `${base}/reference/${org}_annotation.gtf`
+  }), 'step7_qc'));
+
+  if (smallMode) {
+    const steps = smallRnaSteps({ base, all, T, orgKey: val('cfg-organism', 'human'),
+                                  adapter: val('cfg-adapter', 'auto'), r1, qp });
+    Object.entries(steps).forEach(([id, text]) => set(id, envWrap(text, id.replace('cmd-', 'step_'))));
+  }
+
+  if (countsMode) {
+    const skip = '# Not needed: this project starts from a count table (Configure → Data source).';
+    ['cmd-download', 'cmd-check-dl', 'cmd-fastqc', 'cmd-multiqc', 'cmd-trim', 'cmd-check-trim',
+     'cmd-check-urls', 'cmd-genome', 'cmd-index', 'cmd-align', 'cmd-bam', 'cmd-counts',
+     'cmd-preview', 'cmd-postqc'].forEach(id => set(id, skip));
   }
 
   // DESeq2
   const nc = all.length;
   const condVec = [...cSamp.map(()=>`"${ctrl}"`), ...tSamp.map(()=>`"${treat}"`)].join(', ');
+
+  // Optional pairing / batch: one label per sample, controls first. Used only
+  // when it gives a valid model — otherwise DESeq2 stops with "the model
+  // matrix is not full rank" — and the reason is shown on Configure.
+  const pairs = val('cfg-pairs', '').split(',').map(x => x.trim()).filter(Boolean);
+  let pairNote = '';
+  if (pairs.length) {
+    const cond = [...cSamp.map(() => 'c'), ...tSamp.map(() => 't')];
+    const shared = [...new Set(pairs)].some(p => {
+      const inGroups = new Set(pairs.map((q, i) => q === p ? cond[i] : null).filter(Boolean));
+      return inGroups.size === 2;
+    });
+    if (pairs.length !== nc) pairNote = `You gave ${pairs.length} labels for ${nc} samples — one per sample is needed.`;
+    else if (new Set(pairs).size === nc) pairNote = 'Every label is different, so nothing is paired.';
+    else if (!shared) pairNote = 'No label is shared by a control and a treated sample, so pairing cannot be separated from the treatment.';
+  }
+  const paired_design = pairs.length > 0 && !pairNote;
+  const hint = document.getElementById('pairs-hint');
+  if (hint) {
+    hint.dataset.base = hint.dataset.base || hint.innerHTML;
+    hint.innerHTML = pairNote
+      ? `<span style="color:var(--red)">⚠ ${pairNote} DESeq2 will use <code>~ condition</code> until this is fixed.</span>`
+      : paired_design ? `<span style="color:var(--green)">✓ Paired design: <code>~ pair + condition</code> with ${new Set(pairs).size} pairs/batches.</span>`
+      : hint.dataset.base;
+  }
+  const pairVec = pairs.map(p => `"${p.replace(/["\\]/g, '')}"`).join(', ');
+  const designFormula = paired_design ? '~pair + condition' : '~condition';
+  const metaR = rowsExpr =>
+    `# Sample metadata\nsample_info <- data.frame(\n  condition = factor(c(${condVec}), levels=c("${ctrl}", "${treat}")),\n` +
+    (paired_design ? `  pair = factor(c(${pairVec})),\n` : '') +
+    `  row.names = ${rowsExpr}\n)\nprint(sample_info)\n\n` +
+    (paired_design ? `# Samples sharing a pair/batch label are compared with each other, so\n# donor-to-donor differences do not hide the treatment effect.\n` : '');
   const colNames = [
     ...cSamp.map((_,i)=>`"${ctrl.substring(0,3).toUpperCase()}_${i+1}"`),
     ...tSamp.map((_,i)=>`"${treat.substring(0,3).toUpperCase()}_${i+1}"`)
   ].join(', ');
   const sampleOrder = all.map(s=>`"${s}"`).join(', ');
   let r;
-  if (salmonMode) {
+  if (countsMode || smallMode) {
+    r  = `library(DESeq2); library(ggplot2); library(pheatmap); library(ggrepel); library(dplyr)\n\n`;
+    r += `# Project path — results are written here\nbase_path <- "${base}"\n`;
+    r += `dir.create(file.path(base_path, "results"), recursive=TRUE, showWarnings=FALSE)\n\n`;
+    r += countTableLoaderR({
+      file: smallMode ? `${base}/counts/mirna_counts.tsv`
+                      : (val('cfg-counts-path', '') || 'PASTE_THE_PATH_TO_YOUR_COUNT_TABLE'),
+      sheet: smallMode ? '' : val('cfg-counts-sheet', ''), sampleOrder, colNames
+    });
+    r += metaR('colnames(counts)');
+    r += `# Run DESeq2\ndds <- DESeqDataSetFromMatrix(countData=counts, colData=sample_info, design=${designFormula})\ndds <- dds[rowSums(counts(dds)) >= 10, ]\ncat("Genes after filtering:", nrow(dds), "\\n")\ndds <- DESeq(dds)\n\n`;
+  } else if (salmonMode) {
     r  = `library(DESeq2); library(tximport); library(ggplot2); library(pheatmap); library(ggrepel); library(dplyr)\n\n`;
     r += `# Project path — matches your folder\nbase_path <- "${base}"\n\n`;
     r += `# Salmon wrote one folder per sample; tximport sums transcripts to genes\n`;
@@ -3635,10 +4164,10 @@ function updateAll() {
     r += `# ignoreTxVersion handles ENST00000456328.2 vs ENST00000456328\n`;
     r += `txi <- tximport(files, type="salmon", tx2gene=tx2gene, ignoreTxVersion=TRUE)\n`;
     r += `cat("Genes quantified:", nrow(txi$counts), "\\n\\n")\n\n`;
-    r += `# Sample metadata\nsample_info <- data.frame(\n  condition = factor(c(${condVec}), levels=c("${ctrl}", "${treat}")),\n  row.names = colnames(txi$counts)\n)\nprint(sample_info)\n\n`;
+    r += metaR('colnames(txi$counts)');
     r += `# Run DESeq2 — DESeqDataSetFromTximport carries the average transcript\n`;
     r += `# lengths across as offsets, which is why this is not just a count matrix.\n`;
-    r += `dds <- DESeqDataSetFromTximport(txi, colData=sample_info, design=~condition)\ndds <- dds[rowSums(counts(dds)) >= 10, ]\ncat("Genes after filtering:", nrow(dds), "\\n")\ndds <- DESeq(dds)\n\n`;
+    r += `dds <- DESeqDataSetFromTximport(txi, colData=sample_info, design=${designFormula})\ndds <- dds[rowSums(counts(dds)) >= 10, ]\ncat("Genes after filtering:", nrow(dds), "\\n")\ndds <- DESeq(dds)\n\n`;
   } else {
     r  = `library(DESeq2); library(ggplot2); library(pheatmap); library(ggrepel); library(dplyr)\n\n`;
     r += `# Project path — matches your folder\nbase_path <- "${base}"\n\n`;
@@ -3653,31 +4182,56 @@ function updateAll() {
     r += `                          paste(sample_ids[is.na(idx)], collapse=", "))\n`;
     r += `counts <- counts_raw[, bam_cols[idx], drop=FALSE]\n`;
     r += `colnames(counts) <- c(${colNames})\nhead(counts)  # check it looks right\n\n`;
-    r += `# Sample metadata\nsample_info <- data.frame(\n  condition = factor(c(${condVec}), levels=c("${ctrl}", "${treat}")),\n  row.names = colnames(counts)\n)\nprint(sample_info)\n\n`;
-    r += `# Run DESeq2\ndds <- DESeqDataSetFromMatrix(countData=counts, colData=sample_info, design=~condition)\ndds <- dds[rowSums(counts(dds)) >= 10, ]\ncat("Genes after filtering:", nrow(dds), "\\n")\ndds <- DESeq(dds)\n\n`;
+    r += metaR('colnames(counts)');
+    r += `# Run DESeq2\ndds <- DESeqDataSetFromMatrix(countData=counts, colData=sample_info, design=${designFormula})\ndds <- dds[rowSums(counts(dds)) >= 10, ]\ncat("Genes after filtering:", nrow(dds), "\\n")\ndds <- DESeq(dds)\n\n`;
   }
   r += `# Results: ${treat} vs ${ctrl}\nres <- results(dds, contrast=c("condition", "${treat}", "${ctrl}"), alpha=0.05)\nsummary(res)\n\n`;
-  r += `# Save to CSV\nres_df <- as.data.frame(res)\nres_df$gene <- rownames(res_df)\nwrite.csv(res_df, paste0(base_path, "/results/deseq2_results.csv"), row.names=FALSE)\n`;
-  r += `saveRDS(dds, paste0(base_path, "/results/dds.rds"))  # reused by the plot steps\n\n`;
+  r += `# Shrunken fold changes (apeglm): low-count genes no longer produce huge, noisy\n`;
+  r += `# fold changes. Use these for ranking, plots and fold-change cut-offs; padj is\n`;
+  r += `# unchanged. "${ctrl}" is the reference level and condition is the last term\n`;
+  r += `# of the design, so the last coefficient is ${treat} vs ${ctrl}.\n`;
+  r += `res_shrunk <- lfcShrink(dds, coef=tail(resultsNames(dds), 1), type="apeglm", quiet=TRUE)\n\n`;
+  r += `# Save to CSV\nres_df <- as.data.frame(res)\nres_df$log2FoldChange_shrunk <- res_shrunk$log2FoldChange\nres_df$gene <- rownames(res_df)\n`;
+  r += `# Gene names from the GTF (written by the reference step), when available\n`;
+  r += `names_file <- paste0(base_path, "/reference/gene_names.tsv")\n`;
+  r += `if (file.exists(names_file)) {\n`;
+  r += `  gn <- read.delim(names_file, header=FALSE, col.names=c("id","name"), quote="")\n`;
+  r += `  res_df$symbol <- gn$name[match(sub("\\\\.[0-9]+$", "", res_df$gene), gn$id)]\n`;
+  r += `  res_df$symbol[is.na(res_df$symbol)] <- res_df$gene[is.na(res_df$symbol)]\n`;
+  r += `} else res_df$symbol <- res_df$gene\n`;
+  r += `write.csv(res_df, paste0(base_path, "/results/deseq2_results.csv"), row.names=FALSE)\n\n`;
+  r += `# Normalised counts and the sample sheet, for the interactive explorer\n`;
+  r += `norm <- as.data.frame(counts(dds, normalized=TRUE))\nnorm <- cbind(gene=rownames(norm), round(norm, 2))\n`;
+  r += `write.csv(norm, paste0(base_path, "/results/normalized_counts.csv"), row.names=FALSE)\n`;
+  r += `write.csv(data.frame(sample=colnames(dds), condition=dds$condition),\n`;
+  r += `          paste0(base_path, "/results/samples.csv"), row.names=FALSE)\n`;
+  r += `saveRDS(dds, paste0(base_path, "/results/dds.rds"))  # reused by the plot steps\n`;
+  r += `writeLines(capture.output(sessionInfo()), paste0(base_path, "/results/R_sessionInfo.txt"))  # exact R package versions\n\n`;
   r += `cat("\\nResults:\\n")\ncat("  Total genes tested: ", nrow(res_df), "\\n")\ncat("  Significant (padj<0.05): ", sum(res_df$padj<0.05, na.rm=TRUE), "\\n")\ncat("  Upregulated: ", sum(res_df$padj<0.05 & res_df$log2FoldChange>0, na.rm=TRUE), "\\n")\ncat("  Downregulated: ", sum(res_df$padj<0.05 & res_df$log2FoldChange<0, na.rm=TRUE), "\\n")`;
   set('cmd-deseq2', r);
+  set('cmd-consensus', consensusR(base));
 
   // Plot steps reload dds so each block runs standalone via Rscript
   const reload = `library(DESeq2); library(ggplot2); library(pheatmap); library(ggrepel); library(dplyr)\nbase_path <- "${base}"\ndds    <- readRDS(paste0(base_path, "/results/dds.rds"))\nres_df <- read.csv(paste0(base_path, "/results/deseq2_results.csv"))\nrownames(res_df) <- res_df$gene\n\n`;
 
   // Volcano
   let v = reload;
-  v += `res_df <- res_df[!is.na(res_df$padj), ]\nres_df$sig <- "Not significant"\n`;
+  v += `res_df <- res_df[!is.na(res_df$padj), ]\n`;
+  v += `# Shrunken fold changes keep low-count genes from crowding the edges\n`;
+  v += `if (!is.null(res_df$log2FoldChange_shrunk)) res_df$log2FoldChange <- res_df$log2FoldChange_shrunk\n`;
+  v += `res_df$sig <- "Not significant"\n`;
   v += `res_df$sig[res_df$padj<0.05 & res_df$log2FoldChange > 1]  <- "Up in ${treat}"\n`;
   v += `res_df$sig[res_df$padj<0.05 & res_df$log2FoldChange < -1] <- "Down in ${treat}"\n`;
-  v += `top_genes <- res_df %>% filter(padj<0.05) %>% arrange(padj) %>% head(15)\n\n`;
+  v += `top_genes <- res_df %>% filter(padj<0.05) %>% arrange(padj) %>% head(15)\n`;
+  v += `# Label with gene names when the results carry them (from v3.2)\n`;
+  v += `top_genes$label <- if (!is.null(top_genes$symbol)) top_genes$symbol else top_genes$gene\n\n`;
   v += `p <- ggplot(res_df, aes(log2FoldChange, -log10(padj), color=sig)) +\n`;
   v += `  geom_point(alpha=0.6, size=1.5) +\n`;
   v += `  scale_color_manual(values=c("Up in ${treat}"="#f0883e", "Down in ${treat}"="#58a6ff", "Not significant"="#6e7681")) +\n`;
-  v += `  geom_text_repel(data=top_genes, aes(label=gene), size=3, max.overlaps=15) +\n`;
+  v += `  geom_text_repel(data=top_genes, aes(label=label), size=3, max.overlaps=15) +\n`;
   v += `  geom_vline(xintercept=c(-1,1), linetype="dashed", color="#444") +\n`;
   v += `  geom_hline(yintercept=-log10(0.05), linetype="dashed", color="#444") +\n`;
-  v += `  labs(title=paste0("Volcano: ${treat} vs ${ctrl}"), x="Log2 fold change", y="-Log10 adjusted p-value") +\n`;
+  v += `  labs(title=paste0("Volcano: ${treat} vs ${ctrl}"), x="Log2 fold change (apeglm-shrunken)", y="-Log10 adjusted p-value") +\n`;
   v += `  theme_minimal(base_size=13)\nprint(p)\n`;
   v += `ggsave(paste0(base_path, "/results/volcano_plot.png"), plot=p, width=10, height=7, dpi=300)\ncat("Volcano plot saved!\\n")`;
   set('cmd-volcano', v);
@@ -3700,12 +4254,276 @@ function updateAll() {
   set('cmd-pca', pc);
 
   syncAdvancedPages(base, ctrl, treat, cSamp.length, tSamp.length, orgKey);
+  if (smallMode) set('cmd-fgsea', '# Gene-set enrichment analyses genes, not miRNAs. For miRNA function,\n' +
+    '# look up the validated targets of your significant miRNAs (e.g. miRTarBase) and\n# run enrichment on those target genes.');
   updateExports();
 
   saveConfig();
 }
 
 
+
+// R that reads a count table (CSV, TSV, TXT or Excel) into `counts`, with one
+// column per sample named as in colNames. Used for imported tables and for
+// the small-RNA route, whose counts are assembled into the same shape.
+// It refuses what would give silently wrong results: missing samples,
+// non-numeric columns, and normalised values passed off as counts.
+function countTableLoaderR({ file, sheet, sampleOrder, colNames }) {
+  const sheetArg = !sheet ? '1' : /^\d+$/.test(sheet) ? sheet : `"${sheet.replace(/["\\]/g, '')}"`;
+  return `# ─── Read the count table ───\n` +
+    `counts_file <- "${file.replace(/["\\]/g, '')}"\n` +
+    `if (!file.exists(counts_file)) stop("Count table not found: ", counts_file)\n` +
+    `ext <- tolower(tools::file_ext(counts_file))\n` +
+    `raw <- if (ext %in% c("xlsx", "xls")) {\n` +
+    `  as.data.frame(readxl::read_excel(counts_file, sheet=${sheetArg}))\n` +
+    `} else {\n` +
+    `  # comment="#" skips featureCounts' header line; .csv is comma, anything else tab\n` +
+    `  as.data.frame(readr::read_delim(counts_file, delim=if (ext == "csv") "," else "\\t",\n` +
+    `                                  comment="#", show_col_types=FALSE))\n` +
+    `}\n` +
+    `cat("Read", nrow(raw), "rows and", ncol(raw), "columns from", basename(counts_file), "\\n")\n\n` +
+    `# Samples are picked by column name, never by position\n` +
+    `sample_ids <- c(${sampleOrder})\n` +
+    `missing <- setdiff(sample_ids, colnames(raw))\n` +
+    `if (length(missing)) stop("These samples are not columns of the table: ", paste(missing, collapse=", "),\n` +
+    `                          "\\n  Columns found: ", paste(colnames(raw), collapse=", "))\n` +
+    `counts <- as.matrix(raw[, sample_ids, drop=FALSE])\n` +
+    `if (!is.numeric(counts)) stop("Sample columns must contain numbers only — check for text or blank cells.")\n` +
+    `if (anyNA(counts)) stop("The table has empty cells in sample columns; DESeq2 needs a count for every gene.")\n` +
+    `if (any(counts < 0)) stop("The table has negative values — these are not read counts.")\n` +
+    `# TPM and CPM sum to one million in every sample; read counts never do\n` +
+    `if (all(abs(colSums(counts) / 1e6 - 1) < 0.01))\n` +
+    `  stop("Every sample sums to one million: these are TPM or CPM values, not read counts. ",\n` +
+    `       "DESeq2 needs the raw counts — ask for the counts file, or use the FASTQ files.")\n` +
+    `if (any(counts %% 1 != 0)) {\n` +
+    `  warning("Some values are not whole numbers. DESeq2 needs raw read counts; TPM, FPKM or ",\n` +
+    `          "normalised values give wrong results. Rounding — only correct for estimated counts ",\n` +
+    `          "such as RSEM or Salmon expected counts.")\n` +
+    `  counts <- round(counts)\n` +
+    `}\n` +
+    `storage.mode(counts) <- "integer"\n\n` +
+    `# Gene IDs from the first column; repeated IDs are summed\n` +
+    `genes <- as.character(raw[[1]])\n` +
+    `if (anyDuplicated(genes)) {\n` +
+    `  cat("Summing", sum(duplicated(genes)), "repeated gene IDs\\n")\n` +
+    `  counts <- rowsum(counts, genes)\n` +
+    `} else rownames(counts) <- genes\n` +
+    `colnames(counts) <- c(${colNames})\n` +
+    `cat("Count matrix:", nrow(counts), "genes x", ncol(counts), "samples\\n\\n")\n\n`;
+}
+
+// edgeR and limma-voom on DESeq2's own dataset (same samples, filtering
+// and design), then a three-way comparison. For Salmon projects each method
+// gets the input its authors recommend with tximport: transcript-length
+// offsets for edgeR, length-scaled counts for limma-voom.
+function consensusR(base) {
+  return `library(DESeq2); library(edgeR); library(limma); library(ggplot2)\n` +
+    `base_path <- "${base}"\n` +
+    `padj_cut <- 0.05; lfc_cut <- 1     # the same cut-offs as the volcano plot\n\n` +
+    `dds <- readRDS(paste0(base_path, "/results/dds.rds"))\n` +
+    `deseq <- read.csv(paste0(base_path, "/results/deseq2_results.csv"))\n` +
+    `cts <- counts(dds)\n` +
+    `info <- as.data.frame(colData(dds))\n` +
+    `mm <- model.matrix(design(dds), info)    # DESeq2's design, pairing included\n` +
+    `coef <- ncol(mm)                          # condition is the last term\n` +
+    `cat("Design:", deparse(design(dds)), "| testing", colnames(mm)[coef], "\\n\\n")\n\n` +
+    `salmon <- "avgTxLength" %in% assayNames(dds)\n` +
+    `y <- DGEList(cts)\n` +
+    `if (salmon) {\n` +
+    `  # tximport vignette, edgeR section: average transcript lengths as offsets\n` +
+    `  len <- assays(dds)[["avgTxLength"]]\n` +
+    `  len <- len / exp(rowMeans(log(len)))\n` +
+    `  eff_lib <- calcNormFactors(cts / len) * colSums(cts / len)\n` +
+    `  y <- scaleOffset(y, log(sweep(len, 2, eff_lib, "*")))\n` +
+    `}\n` +
+    `keep <- filterByExpr(y, mm)\n` +
+    `cat("Genes kept by filterByExpr:", sum(keep), "of", length(keep), "\\n")\n\n` +
+    `# ─── edgeR: quasi-likelihood F-test ───\n` +
+    `ye <- y[keep, , keep.lib.sizes=FALSE]\n` +
+    `if (!salmon) ye <- normLibSizes(ye)          # TMM\n` +
+    `ye <- estimateDisp(ye, mm)\n` +
+    `et <- topTags(glmQLFTest(glmQLFit(ye, mm), coef=coef), n=Inf)$table\n` +
+    `et$gene <- rownames(et)\n` +
+    `write.csv(et, paste0(base_path, "/results/edgeR_results.csv"), row.names=FALSE)\n\n` +
+    `# ─── limma-voom with sample quality weights ───\n` +
+    `vc <- cts\n` +
+    `if (salmon) {\n` +
+    `  # tximport's "lengthScaledTPM": length-corrected, back on the count scale\n` +
+    `  len <- assays(dds)[["avgTxLength"]]\n` +
+    `  vc <- (cts / len) * rowMeans(len)\n` +
+    `  vc <- sweep(vc, 2, colSums(cts) / colSums(vc), "*")\n` +
+    `}\n` +
+    `yl <- normLibSizes(DGEList(vc)[keep, , keep.lib.sizes=FALSE])\n` +
+    `v <- voomWithQualityWeights(yl, mm)\n` +
+    `lt <- topTable(eBayes(lmFit(v, mm)), coef=coef, number=Inf)\n` +
+    `lt$gene <- rownames(lt)\n` +
+    `write.csv(lt, paste0(base_path, "/results/limma_voom_results.csv"), row.names=FALSE)\n` +
+    `cat("Sample quality weights:", paste(sprintf("%s %.2f", colnames(v), v$targets$sample.weights), collapse=", "), "\\n\\n")\n\n` +
+    `# ─── Compare ───\n` +
+    `cmp <- data.frame(gene=deseq$gene, symbol=if (is.null(deseq$symbol)) deseq$gene else deseq$symbol,\n` +
+    `                  deseq2_lfc=deseq$log2FoldChange, deseq2_padj=deseq$padj)\n` +
+    `cmp$edger_lfc  <- et$logFC[match(cmp$gene, et$gene)];  cmp$edger_fdr  <- et$FDR[match(cmp$gene, et$gene)]\n` +
+    `cmp$limma_lfc  <- lt$logFC[match(cmp$gene, lt$gene)];  cmp$limma_padj <- lt$adj.P.Val[match(cmp$gene, lt$gene)]\n` +
+    `sig <- function(p, l) !is.na(p) & p < padj_cut & !is.na(l) & abs(l) > lfc_cut\n` +
+    `cmp$DESeq2 <- sig(cmp$deseq2_padj, cmp$deseq2_lfc)\n` +
+    `cmp$edgeR  <- sig(cmp$edger_fdr, cmp$edger_lfc)\n` +
+    `cmp$limma  <- sig(cmp$limma_padj, cmp$limma_lfc)\n` +
+    `cmp$n_methods <- cmp$DESeq2 + cmp$edgeR + cmp$limma\n` +
+    `cmp <- cmp[order(-cmp$n_methods, cmp$deseq2_padj), ]\n` +
+    `write.csv(cmp, paste0(base_path, "/results/method_comparison.csv"), row.names=FALSE)\n\n` +
+    `# Venn diagram: seven regions of three circles, counted directly\n` +
+    `A <- cmp$DESeq2; B <- cmp$edgeR; C <- cmp$limma\n` +
+    `n <- sapply(list(A & !B & !C, !A & B & !C, !A & !B & C, A & B & !C, A & !B & C, !A & B & C, A & B & C), sum)\n` +
+    `circ <- function(x, y, g) data.frame(x = x + 1.2 * cos(seq(0, 2 * pi, length.out = 200)),\n` +
+    `                                    y = y + 1.2 * sin(seq(0, 2 * pi, length.out = 200)), g = g)\n` +
+    `circles <- rbind(circ(-0.65, 0.4, "DESeq2"), circ(0.65, 0.4, "edgeR"), circ(0, -0.7, "limma-voom"))\n` +
+    `lab <- data.frame(x = c(-1.2, 1.2, 0, 0, -0.65, 0.65, 0), y = c(0.75, 0.75, -1.35, 0.75, -0.3, -0.3, 0.05), n = n)\n` +
+    `p <- ggplot(circles, aes(x, y)) +\n` +
+    `  geom_polygon(aes(fill = g, group = g), alpha = 0.25, colour = "grey30") +\n` +
+    `  geom_text(data = lab, aes(label = format(n, big.mark = ",")), size = 5) +\n` +
+    `  annotate("text", x = c(-1.6, 1.6, 0), y = c(1.85, 1.85, -2.15), size = 5, fontface = "bold",\n` +
+    `           label = c(paste0("DESeq2 (", sum(A), ")"), paste0("edgeR (", sum(B), ")"), paste0("limma-voom (", sum(C), ")"))) +\n` +
+    `  scale_fill_manual(values = c("#0969da", "#c94e00", "#1a7f37"), guide = "none") +\n` +
+    `  coord_equal() + theme_void() +\n` +
+    `  labs(title = paste0("Significant genes (padj < ", padj_cut, ", |log2FC| > ", lfc_cut, ")"))\n` +
+    `ggsave(paste0(base_path, "/results/method_venn.png"), p, width = 7, height = 7, dpi = 300)\n\n` +
+    `cat("Significant — DESeq2:", sum(A), " edgeR:", sum(B), " limma-voom:", sum(C), "\\n")\n` +
+    `cat("Called by all three:", n[7], "  by exactly one:", sum(n[1:3]), "\\n")\n` +
+    `cat("Of DESeq2's genes, also called by edgeR:", round(100 * mean(B[A]), 1), "%, by limma-voom:",\n` +
+    `    round(100 * mean(C[A]), 1), "%\\n")\n`;
+}
+// ── SMALL RNA / miRNA ROUTE (v3.2) ───────────────────────────────────────
+// miRNA libraries are reads of ~18–30 nt: the adapter is trimmed off, reads
+// are counted on the species' mature miRNAs from miRBase with Bowtie 1
+// (built for short reads), and the resulting miRNA x sample table goes to
+// DESeq2 through the same loader as an imported count table.
+
+// miRBase species prefixes for the organisms RNAflow knows
+const MIRBASE_SPECIES = {
+  human: 'hsa', mouse: 'mmu', rat: 'rno', zebrafish: 'dre', fly: 'dme', worm: 'cel',
+  arabidopsis: 'ath', rice: 'osa', maize: 'zma', soybean: 'gma', tomato: 'sly', wheat: 'tae'
+};
+
+// One fixed miRBase release, checked by checksum. mirbase.org's own download
+// always serves the latest release (and is often unreachable from scripts),
+// so the same reads gave different counts depending on which server answered.
+// This is nf-core's copy of release 22.1 at a fixed commit.
+const MIRBASE = {
+  release: '22.1',
+  url: 'https://raw.githubusercontent.com/nf-core/test-datasets/9520f3d8b79c4fa536f229886cb185fe1c806e85/miRBase/mature.fa',
+  sha256: '3c521fc9bea3c7993e71cf188b11caf73e2d40ac83454e32876455317cc6d342'
+};
+
+// 3' adapters of the common small RNA kits. With the wrong one nothing is
+// trimmed, every read stays longer than 35 nt and is discarded, so the
+// default is to measure which adapter the reads actually contain.
+const SMALL_RNA_ADAPTERS = {
+  TGGAATTCTCGGGTGCCAAGG: 'Illumina TruSeq Small RNA',
+  AGATCGGAAGAGCACACGTCT: 'NEBNext Small RNA',
+  AACTGTAGGCACCATCAAT: 'QIAseq miRNA'
+};
+
+function smallRnaSteps({ base, all, T, orgKey, adapter, r1, qp }) {
+  const sp = MIRBASE_SPECIES[orgKey];
+  const samples = all.length ? all : ['SAMPLE'];
+  const ref = `${base}/reference/mirna_mature_${sp || 'xxx'}.fa`;
+  const idx = `${base}/genome/mirna_${sp || 'xxx'}`;
+  const steps = {};
+
+  // Count each kit's adapter (first 12 nt) in 100,000 reads of the first sample
+  const detect = adapter !== 'auto' ? '' :
+    `# ─── Which kit? Count each known adapter in the first 100,000 reads ───\n` +
+    `ADAPTER=$(for a in ${Object.keys(SMALL_RNA_ADAPTERS).join(' ')}; do\n` +
+    `  printf '%s %s\\n' "$(gzip -cdf ${qp(r1(samples[0]))} | head -400000 | awk 'NR % 4 == 2' | grep -c "\${a:0:12}")" "$a"\n` +
+    `done | sort -k1,1nr | head -1 | cut -d' ' -f2)\n` +
+    `echo "Adapter found in the reads: $ADAPTER"\n\n`;
+  const adapterArg = adapter === 'auto' ? '$ADAPTER' : adapter;
+  steps['cmd-trim'] = detect + samples.map(s =>
+    `fastp -i ${qp(r1(s))} -o ${base}/trimmed/${s}_trimmed.fastq.gz \\\n` +
+    `      --adapter_sequence ${adapterArg} --length_required 16 --length_limit 35 \\\n` +
+    `      --qualified_quality_phred 20 -w ${Math.min(parseInt(T) || 4, 16)} \\\n` +
+    `      --html ${base}/qc/${s}_fastp.html -j ${base}/qc/${s}_fastp.json`).join('\n\n') +
+    `\n\n# Unlike the mRNA route, nothing is clipped from the 5′ end: a mature miRNA\n` +
+    `# is only ~22 nt, so every base is needed to identify it.`;
+
+  if (!sp) {
+    const none = `# miRBase has no miRNAs for this organism. Choose another organism on Configure.`;
+    ['cmd-genome', 'cmd-index', 'cmd-align', 'cmd-bam', 'cmd-counts', 'cmd-preview', 'cmd-postqc']
+      .forEach(id => { steps[id] = none; });
+    return steps;
+  }
+
+  steps['cmd-genome'] =
+    `# ─── Mature miRNA sequences, miRBase release ${MIRBASE.release} ───\n` +
+    `cd ${base}/reference\n` +
+    `sha() { (sha256sum "$1" 2>/dev/null || shasum -a 256 "$1") | cut -d' ' -f1; }\n` +
+    `[ -s mature.fa ] && [ "$(sha mature.fa)" = "${MIRBASE.sha256}" ] && echo "Already have miRBase ${MIRBASE.release}" \\\n` +
+    `  || curl -fL -o mature.fa "${MIRBASE.url}"\n` +
+    `[ "$(sha mature.fa)" = "${MIRBASE.sha256}" ] \\\n` +
+    `  || { echo "mature.fa does not match miRBase ${MIRBASE.release} (checksum) — delete it and re-run." >&2; exit 1; }\n` +
+    `echo "miRBase ${MIRBASE.release}" > mirbase_release.txt\n` +
+    `grep -c "^>" mature.fa    # all species\n\n` +
+    `# Keep this species (${sp}-), and write DNA letters (U -> T) for Bowtie\n` +
+    `awk -v sp="${sp}-" '/^>/ { keep = index($1, ">" sp) == 1; if (keep) print $1; next }\n` +
+    `                   keep  { gsub(/U/, "T"); gsub(/u/, "t"); print }' mature.fa > ${ref}\n` +
+    `grep -c "^>" ${ref}    # ${sp} mature miRNAs`;
+
+  steps['cmd-index'] = `bowtie-build --threads ${T} ${ref} ${idx}\nls -lh ${base}/genome/`;
+
+  steps['cmd-align'] =
+    `# Bowtie 1 for ~22 nt reads: at most one mismatch, sense strand only (--norc),\n` +
+    `# best hit kept. Its summary goes to <sample>_bowtie.log.\n\n` +
+    samples.map(s =>
+      `[ -n "$(gzip -cd ${base}/trimmed/${s}_trimmed.fastq.gz | head -4)" ] \\\n` +
+      `  || { echo "No reads of ${s} survived trimming — check the adapter on Configure." >&2; exit 1; }\n` +
+      `bowtie -p ${T} -q -n 1 -l 15 --norc --best -k 1 -S -x ${idx} \\\n` +
+      `       ${base}/trimmed/${s}_trimmed.fastq.gz 2> ${base}/aligned/${s}_bowtie.log \\\n` +
+      `  | samtools sort -@ ${T} -o ${base}/aligned/${s}.bam -\n` +
+      `samtools index ${base}/aligned/${s}.bam`).join('\n\n') +
+    `\n\n` + versionsCmd(base);
+
+  steps['cmd-bam'] =
+    `# Share of trimmed reads that matched a mature miRNA. 30–80% is typical;\n` +
+    `# much lower usually means the wrong adapter or degraded RNA.\n` +
+    `grep -H "at least one" ${base}/aligned/*_bowtie.log`;
+
+  steps['cmd-counts'] =
+    `# ─── miRNA x sample count table ───\n` +
+    `for s in ${samples.join(' ')}; do\n` +
+    `  samtools idxstats ${base}/aligned/$s.bam | awk -v s=$s '$1 != "*" { print s "\\t" $1 "\\t" $3 }'\n` +
+    `done > ${base}/counts/mirna_long.tsv\n` +
+    `awk -F'\\t' '{ c[$2, $1] = $3; rows[$2] = 1; if (!($1 in seen)) { seen[$1] = 1; cols[++n] = $1 } }\n` +
+    `  END { printf "mirna"; for (i = 1; i <= n; i++) printf "\\t%s", cols[i]; print ""\n` +
+    `        for (r in rows) { printf "%s", r; for (i = 1; i <= n; i++) printf "\\t%d", c[r, cols[i]]; print "" } }' \\\n` +
+    `  ${base}/counts/mirna_long.tsv > ${base}/counts/mirna_counts.tsv\n` +
+    `echo "$(($(wc -l < ${base}/counts/mirna_counts.tsv) - 1)) miRNAs counted"`;
+
+  steps['cmd-preview'] =
+    `# The most abundant miRNAs in the first sample\n` +
+    `sort -t "$(printf '\\t')" -k2,2nr ${base}/counts/mirna_counts.tsv | head -15 | column -t`;
+
+  const table = `${base}/qc/rnaflow_qc_mqc.tsv`;
+  steps['cmd-postqc'] =
+    `# ─── Reads kept after trimming and share matching a mature miRNA ───\n` +
+    `{ echo "# id: 'rnaflow_qc'"\n` +
+    `  echo "# section_name: 'RNAflow small RNA QC'"\n` +
+    `  echo "# description: 'PASS needs at least 20% of trimmed reads on mature miRNAs.'"\n` +
+    `  echo "# plot_type: 'table'"\n` +
+    `  printf 'Sample\\tReads after trimming\\tOn miRNAs (%%)\\tVerdict\\n'\n` +
+    `  for s in ${samples.join(' ')}; do\n` +
+    `    log=${base}/aligned/\${s}_bowtie.log\n` +
+    `    n=$(grep -o 'reads processed: [0-9]*' $log | grep -o '[0-9]*$')\n` +
+    `    pct=$(grep 'at least one' $log | grep -o '([0-9.]*%)' | tr -d '(%)')\n` +
+    `    awk -v s=$s -v n="$n" -v p="$pct" 'BEGIN { v = (p + 0 >= 20) ? "PASS" : "WARN: few reads on miRNAs"\n` +
+    `      printf "%s\\t%d\\t%.1f\\t%s\\n", s, n, p, v }'\n` +
+    `  done; } > ${table}\n` +
+    `echo; grep -v '^#' ${table} | column -t -s "$(printf '\\t')"\n` +
+    `grep -q WARN ${table} && echo "⚠ Some samples need a look — see the Verdict column." || echo "✓ All samples pass."\n\n` +
+    `multiqc ${base}/qc ${base}/aligned -o ${base}/qc --filename rnaflow_final_qc --force\n` +
+    openCmd(`${base}/qc/rnaflow_final_qc.html`);
+
+  return steps;
+}
 // ── COPY ──────────────────────────────────────────────────────────────────
 function copyBlock(btn) {
   const pre = btn.closest('.code-block').querySelector('pre.code');
@@ -4326,7 +5144,10 @@ function generateGFcode() {
 }
 
 // ── SERVER CONNECTION ─────────────────────────────────────────────────────
-const SERVER = (location.protocol === 'http:' && location.port === '7788')
+// A page served by an RNAflow server talks to that server — including one
+// started on another port with RNAFLOW_PORT, which the server injects its
+// token into. Opened from disk, it looks for the default port.
+const SERVER = (location.protocol === 'http:' && (location.port === '7788' || window.__RNAFLOW_TOKEN__))
   ? location.origin
   : "http://127.0.0.1:7788";
 let connected = false;
@@ -4429,7 +5250,20 @@ async function checkServer() {
       envWarned = true;
       const label = document.getElementById('conn-label');
       if (label) label.title = `conda env "${s.env}" not found — run the Install Tools step`;
+      if (new URLSearchParams(location.search).get('setup') === '1') {
+        // First launch of the desktop app: go straight to installing
+        goTo('page-install', document.getElementById('nav-install'));
+        setTimeout(() => {
+          const btn = document.querySelector('#cmd-install-env')
+            ?.closest('.code-block')?.querySelector('.run-btn');
+          if (btn && !btn.disabled) btn.click();
+        }, 400);
+      } else {
+        showToast('The analysis tools are not installed yet. Install them in one click.',
+                  'page-install', 'nav-install');
+      }
     }
+    if (s.env_present === true) envWarned = false;
   } catch {
     serverUp = false;
     setConnected(false);
@@ -4441,7 +5275,11 @@ setInterval(checkServer, 3000);
 // ── CODE BLOCK RUN BUTTON BUILDER ─────────────────────────────────────────
 // Called after every updateAll() to wrap <pre> elements with Run buttons.
 // `lang` matters: R blocks used to be piped into a shell, which always failed.
+const SETUP_BLOCKS = ['cmd-install-env', 'cmd-fix-env', 'cmd-recreate-env'];
 const STEP_MAP = {
+  'cmd-install-env': { step: 'nav-install', next: ['page-download','nav-download'], lang: 'bash' },
+  'cmd-fix-env':     { step: null,          next: null, lang: 'bash' },
+  'cmd-recreate-env':{ step: null,          next: null, lang: 'bash' },
   'cmd-session':    { step: null,          next: null, lang: 'bash' },
   'cmd-mkdir':      { step: null,          next: null, lang: 'bash' },
   'cmd-list-local': { step: null,          next: null, lang: 'bash' },
@@ -4458,7 +5296,10 @@ const STEP_MAP = {
   'cmd-bam':        { step: 'nav-align',   next: ['page-counts','nav-counts'], lang: 'bash' },
   'cmd-counts':     { step: 'nav-counts',  next: ['page-genefamily','nav-genefamily'], lang: 'bash' },
   'cmd-preview':    { step: null,          next: null, lang: 'bash' },
+  'cmd-postqc':     { step: null,          next: null, lang: 'bash' },
   'cmd-deseq2':     { step: 'nav-deseq2',  next: ['page-plots','nav-plots'], lang: 'r' },
+  'cmd-consensus':  { step: null,          next: null, lang: 'r' },
+  'cmd-fgsea':      { step: null,          next: null, lang: 'r' },
   'cmd-volcano':    { step: null,          next: null, lang: 'r' },
   'cmd-heatmap':    { step: null,          next: null, lang: 'r' },
   'cmd-pca':        { step: 'nav-plots',   next: null, lang: 'r' },
@@ -4577,11 +5418,22 @@ async function runCommand(cmd, runBtn, stopBtn, termPanel, stepId, nextInfo, lan
   // POST to server
   let jobId;
   try {
-    const res = await fetch(`${SERVER}/run`, {
+    // Install blocks run through /setup: the server builds the env from the
+    // pinned file without first activating the env it is about to create
+    const setup = SETUP_BLOCKS.includes(preId);
+    const res = await fetch(`${SERVER}${setup ? '/setup' : '/run'}`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ cmd, lang: lang || 'bash', label: preId || 'command' })
+      body: JSON.stringify(setup ? { yaml: envYaml() }
+                                 : { cmd, lang: lang || 'bash', label: preId || 'command' })
     });
+    if (setup && !res.ok && res.status !== 401) {
+      const e = await res.json().catch(() => ({}));
+      addLine('❌ ' + (e.detail || e.error || 'Setup could not start'), 'err');
+      runBtn.className = 'run-btn failed'; runBtn.innerHTML = '✕ Failed'; runBtn.disabled = false;
+      stopBtn.classList.remove('show');
+      return;
+    }
     if (res.status === 401) {
       addLine('🔑 Not paired with the server — paste its access token.', 'err');
       runBtn.className = 'run-btn failed'; runBtn.innerHTML = '🔑 Pair'; runBtn.disabled = false;
@@ -4713,7 +5565,7 @@ async function resumeJobs() {
 // is settled. Exporting the config means the two do not have to be re-entered.
 function nfStrandedness() {
   // nf-core wording, mapped from the featureCounts -s value used elsewhere
-  return { '0': 'unstranded', '1': 'forward', '2': 'reverse' }[val('cfg-strand', '0')] || 'auto';
+  return { '0': 'unstranded', '1': 'forward', '2': 'reverse' }[val('cfg-strand', 'auto')] || 'auto';
 }
 
 // Nextflow does not expand "~" inside a samplesheet field, so paths handed to
@@ -4833,6 +5685,7 @@ const RUNALL_STEPS = [
   ['Align / quantify',                  'cmd-align'],
   ['Post-alignment checks',             'cmd-bam'],
   ['Count reads per gene',              'cmd-counts'],
+  ['QC summary (rRNA, mapping, coverage)', 'cmd-postqc'],
 ];
 
 function downloadRunAll() {
@@ -4868,6 +5721,261 @@ function downloadRunAll() {
   sh += `echo\necho "Pipeline finished. Next: open the QC report, then run the R analysis."\n`;
   saveTextFile('run_all.sh', sh, 'text/x-shellscript');
 }
+
+// ── RESULTS EXPLORER (v3.2) ───────────────────────────────────────────────
+// Interactive volcano, gene lookup, top-gene table and enrichment browser,
+// read from the project's results/ through the local server. No plotting
+// library: a canvas for the ~20k points, SVG for one gene's counts.
+const RX = { rows: [], norm: null, samples: [], cond: {}, pts: [], sel: null, sortKey: 'padj', sortAsc: true };
+
+// RFC 4180-ish: quoted fields, doubled quotes, commas and newlines inside quotes
+function rxParseCsv(text) {
+  const out = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; }
+      else f += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(f); f = ''; if (row.length > 1 || row[0] !== '') out.push(row); row = [];
+    } else f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); out.push(row); }
+  const head = out.shift() || [];
+  return out.map(r => Object.fromEntries(head.map((h, k) => [h, r[k]])));
+}
+const rxNum = v => (v === undefined || v === '' || v === 'NA') ? NaN : Number(v);
+const rxFmt = (v, d = 3) => Number.isFinite(v) ? (Math.abs(v) < 1e-3 && v !== 0 ? v.toExponential(2) : v.toFixed(d)) : 'NA';
+const rxEsc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+async function rxFetchCsv(path, optional) {
+  const r = await fetch(fileUrl(path));
+  if (!r.ok) { if (optional) return null; throw new Error(`${path.split('/').pop()}: ${r.status === 404 ? 'not found' : 'HTTP ' + r.status}`); }
+  return rxParseCsv(await r.text());
+}
+
+async function rxLoad() {
+  const say = (h, c) => { const el = document.getElementById('rx-status'); el.innerHTML = h; el.style.color = c || 'var(--text3)'; };
+  const base = document.getElementById('folder-preview-text')?.textContent || '';
+  if (!connected) { say('The explorer reads files through the local server — connect it first.', 'var(--orange)'); return; }
+  say('Loading results…');
+  try {
+    const reg = await fetch(`${SERVER}/scope`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ root: base }) });
+    if (!reg.ok) throw new Error((await reg.json().catch(() => ({}))).detail || 'project folder not found');
+    const root = (await reg.json()).root;
+    const res = await rxFetchCsv(`${root}/results/deseq2_results.csv`);
+    RX.rows = res.map(r => ({
+      gene: r.gene, symbol: r.symbol || r.gene, baseMean: rxNum(r.baseMean),
+      lfc: rxNum(r.log2FoldChange), lfcS: rxNum(r.log2FoldChange_shrunk), padj: rxNum(r.padj), pvalue: rxNum(r.pvalue)
+    }));
+    const hasShrunk = RX.rows.some(r => Number.isFinite(r.lfcS));
+    const box = document.getElementById('rx-shrunk'); box.disabled = !hasShrunk; if (!hasShrunk) box.checked = false;
+    // Optional extras written from v3.2: per-sample counts and the sample sheet
+    const norm = await rxFetchCsv(`${root}/results/normalized_counts.csv`, true);
+    const smp = await rxFetchCsv(`${root}/results/samples.csv`, true);
+    RX.norm = norm ? Object.fromEntries(norm.map(r => [r.gene, r])) : null;
+    RX.samples = norm && norm.length ? Object.keys(norm[0]).filter(k => k !== 'gene') : [];
+    RX.cond = smp ? Object.fromEntries(smp.map(r => [r.sample, r.condition])) : {};
+    // edgeR / limma-voom comparison, when that step has been run
+    const mc = await rxFetchCsv(`${root}/results/method_comparison.csv`, true);
+    RX.methods = mc ? Object.fromEntries(mc.map(r => [r.gene, r])) : null;
+    RX.root = root;
+    document.getElementById('rx-main').style.display = '';
+    say(`${RX.rows.length.toLocaleString()} genes from <code>${rxEsc(root)}/results</code>` +
+        (RX.norm ? '' : ' — re-run DESeq2 with this version to see per-sample counts.'));
+    rxRender();
+    rxEnrichList();
+  } catch (e) {
+    document.getElementById('rx-main').style.display = 'none';
+    say(`❌ ${rxEsc(e.message)}. Has the DESeq2 step run for this project?`, 'var(--red)');
+  }
+}
+
+function rxCuts() {
+  return { padj: Number(document.getElementById('rx-padj').value), lfc: Number(document.getElementById('rx-lfc').value),
+           shrunk: document.getElementById('rx-shrunk').checked };
+}
+const rxL = (r, c) => c.shrunk && Number.isFinite(r.lfcS) ? r.lfcS : r.lfc;
+function rxClass(r, c) {
+  const l = rxL(r, c);
+  if (!(r.padj < c.padj) || !(Math.abs(l) > c.lfc)) return 0;
+  return l > 0 ? 1 : -1;
+}
+
+function rxRender() {
+  const c = rxCuts();
+  const sig = RX.rows.filter(r => rxClass(r, c) !== 0);
+  const up = sig.filter(r => rxL(r, c) > 0).length;
+  document.getElementById('rx-summary').innerHTML =
+    `<b class="up">${up.toLocaleString()} up</b> · <b class="down">${(sig.length - up).toLocaleString()} down</b> ` +
+    `at padj &lt; ${c.padj} and |log2FC| &gt; ${c.lfc} (${c.shrunk ? 'shrunken' : 'unshrunken'} fold changes)`;
+  rxVolcano(c);
+  rxTable(sig, c);
+}
+
+function rxVolcano(c) {
+  const cv = document.getElementById('rx-volcano');
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth || 600, H = 380;
+  cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px';
+  const g = cv.getContext('2d'); g.scale(dpr, dpr);
+  const css = getComputedStyle(document.documentElement);
+  const col = n => css.getPropertyValue(n).trim();
+  const pts = RX.rows.filter(r => Number.isFinite(rxL(r, c)) && Number.isFinite(r.padj));
+  const ys = pts.map(r => -Math.log10(Math.max(r.padj, 1e-300)));
+  const xMax = Math.max(1, ...pts.map(r => Math.abs(rxL(r, c)))) * 1.05;
+  const yMax = Math.max(2, ...ys) * 1.05;
+  const m = { l: 46, r: 12, t: 12, b: 36 };
+  const X = v => m.l + (v + xMax) / (2 * xMax) * (W - m.l - m.r);
+  const Y = v => H - m.b - v / yMax * (H - m.t - m.b);
+  g.clearRect(0, 0, W, H);
+  // axes and threshold lines
+  g.strokeStyle = col('--border2'); g.fillStyle = col('--text3'); g.lineWidth = 1; g.font = '11px ' + col('--font');
+  g.beginPath(); g.moveTo(m.l, m.t); g.lineTo(m.l, H - m.b); g.lineTo(W - m.r, H - m.b); g.stroke();
+  g.setLineDash([4, 4]); g.strokeStyle = col('--border');
+  [-c.lfc, c.lfc].forEach(v => { if (c.lfc > 0) { g.beginPath(); g.moveTo(X(v), m.t); g.lineTo(X(v), H - m.b); g.stroke(); } });
+  g.beginPath(); g.moveTo(m.l, Y(-Math.log10(c.padj))); g.lineTo(W - m.r, Y(-Math.log10(c.padj))); g.stroke(); g.setLineDash([]);
+  g.textAlign = 'center';
+  for (let v = -Math.floor(xMax); v <= Math.floor(xMax); v += Math.max(1, Math.floor(xMax / 4))) g.fillText(v, X(v), H - m.b + 14);
+  g.fillText('log2 fold change' + (c.shrunk ? ' (shrunken)' : ''), (m.l + W - m.r) / 2, H - 6);
+  g.textAlign = 'right';
+  const step = Math.max(1, Math.ceil(yMax / 5));
+  for (let v = 0; v <= yMax; v += step) g.fillText(v, m.l - 6, Y(v) + 4);
+  g.save(); g.translate(12, (m.t + H - m.b) / 2); g.rotate(-Math.PI / 2); g.textAlign = 'center'; g.fillText('-log10 padj', 0, 0); g.restore();
+  // points: not significant first, so coloured ones sit on top
+  const colours = { 0: col('--text3'), 1: col('--orange'), '-1': col('--blue') };
+  RX.pts = pts.map((r, k) => ({ r, x: X(rxL(r, c)), y: Y(ys[k]), k: rxClass(r, c) }));
+  [0, -1, 1].forEach(k => {
+    g.fillStyle = colours[k]; g.globalAlpha = k === 0 ? 0.35 : 0.8;
+    RX.pts.forEach(p => { if (p.k === k) { g.beginPath(); g.arc(p.x, p.y, k ? 2.4 : 1.6, 0, 6.283); g.fill(); } });
+  });
+  g.globalAlpha = 1;
+  // label the 10 most significant, plus the selected gene
+  g.fillStyle = col('--text'); g.font = '600 11px ' + col('--font'); g.textAlign = 'left';
+  RX.pts.filter(p => p.k).sort((a, b) => a.r.padj - b.r.padj).slice(0, 10)
+    .forEach(p => g.fillText(p.r.symbol, p.x + 4, p.y - 4));
+  const s = RX.sel && RX.pts.find(p => p.r.gene === RX.sel);
+  if (s) { g.strokeStyle = col('--text'); g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, 6, 0, 6.283); g.stroke(); }
+  cv.onmousemove = ev => {
+    const b = cv.getBoundingClientRect(), x = ev.clientX - b.left, y = ev.clientY - b.top;
+    let best = null, bd = 64;
+    for (const p of RX.pts) { const d = (p.x - x) ** 2 + (p.y - y) ** 2; if (d < bd) { bd = d; best = p; } }
+    const tip = document.getElementById('rx-tip');
+    if (!best) { tip.style.display = 'none'; cv.style.cursor = 'crosshair'; return; }
+    cv.style.cursor = 'pointer';
+    tip.style.display = 'block'; tip.style.left = best.x + 'px'; tip.style.top = best.y + 'px';
+    tip.textContent = `${best.r.symbol}  log2FC ${rxFmt(rxL(best.r, c), 2)}  padj ${rxFmt(best.r.padj)}`;
+    cv.onclick = () => rxSelect(best.r.gene);
+  };
+  cv.onmouseleave = () => { document.getElementById('rx-tip').style.display = 'none'; };
+}
+
+function rxTable(sig, c) {
+  const k = RX.sortKey, dir = RX.sortAsc ? 1 : -1;
+  const val = r => k === 'symbol' ? r.symbol.toLowerCase() : k === 'lfc' ? rxL(r, c) : r[k];
+  const rows = sig.slice().sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * dir);
+  RX.visible = rows;
+  document.getElementById('rx-count').textContent = `${rows.length.toLocaleString()} genes${rows.length > 500 ? ' (first 500 shown)' : ''}`;
+  const th = (key, label) => `<th onclick="rxSort('${key}')">${label}${RX.sortKey === key ? (RX.sortAsc ? ' ▲' : ' ▼') : ''}</th>`;
+  document.getElementById('rx-table').innerHTML =
+    `<thead><tr>${th('symbol', 'Gene')}${th('lfc', 'log2FC')}${th('padj', 'padj')}${th('baseMean', 'Mean count')}</tr></thead><tbody>` +
+    rows.slice(0, 500).map(r => `<tr data-g="${rxEsc(r.gene)}" class="${r.gene === RX.sel ? 'sel' : ''}">` +
+      `<td>${rxEsc(r.symbol)}</td><td>${rxFmt(rxL(r, c), 2)}</td><td>${rxFmt(r.padj)}</td><td>${rxFmt(r.baseMean, 0)}</td></tr>`).join('') +
+    `</tbody>`;
+  document.querySelectorAll('#rx-table tbody tr').forEach(tr => tr.onclick = () => rxSelect(tr.dataset.g));
+}
+function rxSort(key) { RX.sortAsc = RX.sortKey === key ? !RX.sortAsc : key === 'padj' || key === 'symbol'; RX.sortKey = key; rxRender(); }
+
+function rxSearch(q) {
+  q = q.trim().toLowerCase(); if (q.length < 2) return;
+  const hit = RX.rows.find(r => r.symbol.toLowerCase() === q || r.gene.toLowerCase() === q)
+           || RX.rows.find(r => r.symbol.toLowerCase().startsWith(q) || r.gene.toLowerCase().startsWith(q));
+  if (hit) rxSelect(hit.gene);
+}
+
+function rxSelect(gene) {
+  RX.sel = gene; rxRender();
+  const r = RX.rows.find(x => x.gene === gene); if (!r) return;
+  const c = rxCuts(), k = rxClass(r, c);
+  let html = `<h4>${rxEsc(r.symbol)}</h4><div class="id">${rxEsc(r.gene)}</div>` +
+    `<dl><dt>log2FC</dt><dd>${rxFmt(r.lfc, 3)}</dd>` +
+    (Number.isFinite(r.lfcS) ? `<dt>shrunken</dt><dd>${rxFmt(r.lfcS, 3)}</dd>` : '') +
+    `<dt>padj</dt><dd>${rxFmt(r.padj)}</dd><dt>mean count</dt><dd>${rxFmt(r.baseMean, 1)}</dd>` +
+    `<dt>call</dt><dd>${k === 1 ? 'up' : k === -1 ? 'down' : 'not significant'}</dd>` +
+    rxMethodsRow(gene) + `</dl>`;
+  const n = RX.norm && RX.norm[gene];
+  if (n) {
+    // one dot per sample, grouped by condition, on a log scale
+    const groups = [...new Set(RX.samples.map(s => RX.cond[s] || '?'))];
+    const vals = RX.samples.map(s => ({ s, g: RX.cond[s] || '?', v: Number(n[s]) }));
+    const lg = v => Math.log10(v + 1), vmax = Math.max(1, ...vals.map(d => lg(d.v)));
+    const W = 300, H = 170, ml = 40, mb = 26;
+    const gx = gi => ml + (gi + 0.5) * (W - ml - 10) / groups.length;
+    const y = v => H - mb - lg(v) / vmax * (H - mb - 10);
+    const colr = gi => gi === 0 ? 'var(--ctrl)' : 'var(--treat)';
+    html += `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Normalised counts per sample for ${rxEsc(r.symbol)}">` +
+      `<line x1="${ml}" y1="10" x2="${ml}" y2="${H - mb}" stroke="var(--border2)"/>` +
+      `<text x="${ml - 6}" y="${y(0) + 4}" text-anchor="end" font-size="10" fill="var(--text3)">0</text>` +
+      `<text x="${ml - 6}" y="14" text-anchor="end" font-size="10" fill="var(--text3)">${Math.round(10 ** vmax - 1).toLocaleString()}</text>` +
+      groups.map((gname, gi) => `<text x="${gx(gi)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--text2)">${rxEsc(gname)}</text>`).join('') +
+      vals.map((d, i) => { const gi = groups.indexOf(d.g), same = vals.filter(e => e.g === d.g), j = same.indexOf(d);
+        const x = gx(gi) + (j - (same.length - 1) / 2) * 9;
+        return `<circle cx="${x}" cy="${y(d.v)}" r="4.5" fill="${colr(gi)}" fill-opacity="0.85"><title>${rxEsc(d.s)}: ${d.v.toLocaleString()}</title></circle>`; }).join('') +
+      `</svg><div style="font-size:0.72em;color:var(--text3);">Normalised counts per sample (log scale). Hover a dot for its value.</div>`;
+  }
+  document.getElementById('rx-gene').innerHTML = html;
+}
+
+// "3 of 3 — DESeq2, edgeR, limma-voom" from method_comparison.csv
+function rxMethodsRow(gene) {
+  const m = RX.methods && RX.methods[gene];
+  if (!m) return '';
+  const yes = [['DESeq2', m.DESeq2], ['edgeR', m.edgeR], ['limma-voom', m.limma]]
+    .filter(([, v]) => v === 'TRUE').map(([n]) => n);
+  return `<dt>methods</dt><dd>${yes.length} of 3${yes.length ? ' — ' + yes.join(', ') : ''}</dd>`;
+}
+
+function rxDownload() {
+  const c = rxCuts(), rows = RX.visible || [];
+  const csv = ['gene,symbol,log2FoldChange,log2FoldChange_shrunk,padj,baseMean',
+    ...rows.map(r => [r.gene, `"${r.symbol.replace(/"/g, '""')}"`, r.lfc, r.lfcS, r.padj, r.baseMean].join(','))].join('\n');
+  saveTextFile(`significant_padj${c.padj}_lfc${c.lfc}.csv`, csv + '\n', 'text/csv');
+}
+
+// Enrichment tables written by the GSEA page, when they exist
+const RX_ENRICH = [
+  ['GO_BP_ORA.csv', 'GO biological process — ORA'], ['GO_MF_ORA.csv', 'GO molecular function — ORA'],
+  ['GO_CC_ORA.csv', 'GO cellular component — ORA'], ['GSEA_GO_BP.csv', 'GO biological process — GSEA'],
+  ['KEGG_ORA.csv', 'KEGG — ORA'], ['KEGG_GSEA.csv', 'KEGG — GSEA'],
+  ['Reactome_ORA.csv', 'Reactome — ORA'], ['Reactome_GSEA.csv', 'Reactome — GSEA'],
+  ['fgsea_Hallmark.csv', 'MSigDB Hallmark — fgsea']
+];
+async function rxEnrichList() {
+  const box = document.getElementById('rx-enrich');
+  const listing = await resList(`${RX.root}/results`).catch(() => ({ entries: [] }));
+  const have = RX_ENRICH.filter(([f]) => listing.entries.some(e => e.name === f));
+  if (!have.length) { box.innerHTML = `<div style="font-size:0.8em;color:var(--text3);">No enrichment tables yet — run the GSEA &amp; Pathway page to browse them here.</div>`; return; }
+  box.innerHTML = `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px;"><h3 style="margin:0;">Pathways &amp; gene sets</h3>` +
+    `<select id="rx-en-file" onchange="rxEnrichShow()">${have.map(([f, l]) => `<option value="${f}">${l}</option>`).join('')}</select>` +
+    `<input type="search" id="rx-en-q" placeholder="Filter terms or genes" oninput="rxEnrichShow()" style="flex:1 1 160px;font:inherit;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);"></div>` +
+    `<div class="rx-table-wrap"><table class="ref-table rx-table" id="rx-en-table"></table></div>`;
+  rxEnrichShow();
+}
+async function rxEnrichShow() {
+  const f = document.getElementById('rx-en-file').value, q = (document.getElementById('rx-en-q').value || '').toLowerCase();
+  RX.enrich = RX.enrich || {};
+  if (!RX.enrich[f]) RX.enrich[f] = await rxFetchCsv(`${RX.root}/results/${f}`, true) || [];
+  const rows = RX.enrich[f].filter(r => !q || (r.Description || r.pathway || '').toLowerCase().includes(q) || (r.core_enrichment || r.geneID || r.leadingEdge || '').toLowerCase().includes(q));
+  const gsea = rows.length && 'NES' in rows[0];
+  document.getElementById('rx-en-table').innerHTML =
+    `<thead><tr><th>Term</th><th>${gsea ? 'NES' : 'Genes'}</th><th>padj</th></tr></thead><tbody>` +
+    rows.slice(0, 300).map(r => `<tr title="${rxEsc((r.geneID || r.core_enrichment || r.leadingEdge || '').split('/').slice(0, 30).join(', '))}"><td>${rxEsc(r.Description || (r.pathway || '').replace(/^HALLMARK_/, '').replace(/_/g, ' ') || r.ID)}</td>` +
+      `<td>${gsea ? rxFmt(rxNum(r.NES), 2) : rxEsc(r.Count || '')}</td><td>${rxFmt(rxNum(r['p.adjust'] ?? r.padj))}</td></tr>`).join('') +
+    `</tbody>`;
+}
+window.addEventListener('resize', () => { if (RX.rows.length && document.getElementById('rx-main').style.display !== 'none') rxRender(); });
 
 // ── RESULTS VIEWER (v3) ───────────────────────────────────────────────────
 // Reads outputs back through the local server so plots and reports can be
@@ -5514,6 +6622,7 @@ function envWrap(cmdBody, stepName) {
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────────
+renderEnvBlocks();        // install / fix commands from the pinned environment
 restoreConfig();          // bring back the saved project before first render
 applyMethod();            // fills in the method blurb, dims align-only steps
 applyDataSource();        // shows the right data-source panel, then updateAll()

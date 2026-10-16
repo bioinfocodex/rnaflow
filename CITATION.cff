@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use RNAflow, please cite it as below."
+title: "RNAflow: a guided desktop application for reproducible bulk RNA-seq analysis"
+authors:
+  - family-names: Bhattarai
+    given-names: Matrika
+    orcid: "https://orcid.org/0000-0003-2627-6251"
+    affiliation: "Independent researcher, BioInfoCodex"
+version: 3.2.0
+license: MIT
+repository-code: "https://github.com/bioinfocodex/rnaflow"
+url: "https://bioinfocodex.com"
+keywords:
+  - RNA-seq
+  - transcriptomics
+  - differential expression
+  - reproducibility
+  - DESeq2

@@ -1,0 +1,384 @@
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-icon">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- RNA single-strand backbone -->
+        <path d="M3 22 C5 18 10 17 13 13 C16 9 21 8 23 4" stroke="white" stroke-width="2.1" stroke-linecap="round" fill="none"/>
+        <!-- A (adenine) -->
+        <line x1="6.5" y1="19" x2="9" y2="21.5" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="9" cy="21.5" r="1.8" fill="#f87171"/>
+        <!-- U (uracil) -->
+        <line x1="11.5" y1="14.5" x2="14" y2="17" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="14" cy="17" r="1.8" fill="#fbbf24"/>
+        <!-- G (guanine) -->
+        <line x1="16.5" y1="10" x2="19" y2="12.5" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="19" cy="12.5" r="1.8" fill="#34d399"/>
+        <!-- C (cytosine) -->
+        <line x1="21" y1="6" x2="23" y2="8.5" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="23" cy="8.5" r="1.8" fill="#c4b5fd"/>
+      </svg>
+    </div>
+    <div class="logo-text-wrap">
+      <div class="logo-name"><span class="logo-rna">RNA</span><span class="logo-flow">flow</span></div>
+      <div class="logo-tagline">RNA-seq analysis pipeline <span style="opacity:0.65;">· v3.2</span></div>
+    </div>
+  </div>
+  <div class="topbar-divider"></div>
+  <div class="topbar-project">Project: <span id="tb-project">RNA-Seq_yeast</span></div>
+  <div class="topbar-spacer"></div>
+  <div class="conn-dot" id="conn-dot"></div>
+  <span class="conn-label" id="conn-label">Not connected</span>
+  <button id="conn-pair-btn" onclick="promptForToken()" style="display:none;margin-left:8px;padding:3px 10px;border-radius:6px;border:1px solid var(--orange);background:transparent;color:var(--orange);font-size:0.72em;cursor:pointer;white-space:nowrap;" title="Paste the access token printed by rnaflow_server.py">🔑 Connect</button>
+  <div class="topbar-divider"></div>
+  <div class="topbar-pills">
+    <span class="pill" id="tb-organism">Yeast</span>
+    <span class="pill" id="tb-readtype">Single-end</span>
+    <span class="pill green" id="tb-progress">0 / 15</span>
+  </div>
+  <div class="topbar-divider"></div>
+  <div class="mode-indicator" id="mode-indicator" onclick="toggleBanner()" title="Click to change mode">
+    <span id="mode-indicator-icon">⚙</span>
+    <span id="mode-indicator-label">Choose mode</span>
+  </div>
+</div>
+
+<!-- SETTINGS BAR -->
+<div class="settings-bar" id="settings-bar">
+
+  <!-- Three compact dropdowns in one row -->
+  <div class="settings-row">
+
+    <!-- Dropdown 1: Run mode -->
+    <div class="sbar-item" id="sbar-item-mode">
+      <span class="sbar-icon">⚡</span>
+      <div class="sbar-content">
+        <div class="sbar-label">Run mode</div>
+        <select class="sbar-select" id="sbar-mode-select" onchange="onModeSelect(this.value)">
+          <option value="">Choose...</option>
+          <option value="run">Mode A — Run from app</option>
+          <option value="copy">Mode B — Run on terminal</option>
+        </select>
+      </div>
+      <button class="sbar-help" onclick="toggleDetail('mode')" title="More info">?</button>
+    </div>
+
+    <div class="sbar-divider"></div>
+
+    <!-- Dropdown 2: How running / server -->
+    <div class="sbar-item" id="sbar-item-server">
+      <span class="sbar-icon">ℹ️</span>
+      <div class="sbar-content">
+        <div class="sbar-label">Using RNAflow as</div>
+        <select class="sbar-select" id="sbar-how-select" onchange="onHowSelect(this.value)">
+          <option value="desktop">Desktop app (installed)</option>
+          <option value="html">HTML file in browser</option>
+        </select>
+      </div>
+      <button class="sbar-help" onclick="toggleDetail('server')" title="Setup instructions">?</button>
+    </div>
+
+    <div class="sbar-divider"></div>
+
+    <!-- Dropdown 3: Compute environment -->
+    <div class="sbar-item" id="sbar-item-env">
+      <span class="sbar-icon">🖥️</span>
+      <div class="sbar-content">
+        <div class="sbar-label">Compute environment</div>
+        <select class="sbar-select" id="sbar-env-select" onchange="onEnvSelect(this.value)">
+          <optgroup label="Local">
+            <option value="local">💻 Local computer</option>
+          </optgroup>
+          <optgroup label="HPC cluster">
+            <option value="slurm">🏢 SLURM (sbatch)</option>
+            <option value="pbs">🏗️ PBS / Torque (qsub)</option>
+            <option value="lsf">🔵 LSF / IBM (bsub)</option>
+          </optgroup>
+          <optgroup label="Cloud">
+            <option value="aws">☁️ AWS (S3 + EC2)</option>
+            <option value="gcp">🌐 Google Cloud (GCS)</option>
+            <option value="azure">🔷 Azure (Blob Storage)</option>
+          </optgroup>
+        </select>
+      </div>
+      <button class="sbar-help" onclick="toggleDetail('env')" title="Environment settings">⚙</button>
+    </div>
+
+  </div><!-- end settings-row -->
+
+  <!-- Detail panels — slide open when ? button clicked -->
+
+  <!-- Mode detail -->
+  <div class="sbar-detail" id="sbar-detail-mode">
+    <div class="sbar-detail-inner">
+      <div class="sbar-detail-close" onclick="toggleDetail('mode')">✕</div>
+      <div class="sbar-detail-title">⚡ How would you like to run commands?</div>
+      <div class="mode-cards-row" style="margin-top:14px;">
+        <div class="mode-card" id="mode-card-run" onclick="selectMode('run');onModeSelect('run')">
+          <div class="mode-card-tag">✅ Active</div>
+          <div class="mode-card-icon">⚡</div>
+          <div class="mode-card-content">
+            <div class="mode-card-title">Mode A — Run directly from this app</div>
+            <div class="mode-card-desc">Every code block gets a <strong style="color:var(--green)">▶ Run</strong> button. Click it — the command executes automatically, live output streams in, steps tick off. <strong style="color:var(--text)">Requires:</strong> <code style="color:var(--green);background:rgba(63,185,80,0.1);padding:1px 5px;border-radius:4px;">rnaflow_server.py</code> running in Terminal first.</div>
+          </div>
+        </div>
+        <div class="mode-card" id="mode-card-copy" onclick="selectMode('copy');onModeSelect('copy')">
+          <div class="mode-card-tag">✅ Active</div>
+          <div class="mode-card-icon">📋</div>
+          <div class="mode-card-content">
+            <div class="mode-card-title">Mode B — Run on terminal manually</div>
+            <div class="mode-card-desc">Every code block has a <strong style="color:var(--blue)">Copy</strong> button. Copy → paste into Terminal → run yourself. <strong style="color:var(--text)">No server needed.</strong> Works offline on any OS.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Server detail -->
+  <!-- Server detail — auto-detects OS, shows only relevant info -->
+  <div class="sbar-detail" id="sbar-detail-server">
+    <div class="sbar-detail-inner">
+      <div class="sbar-detail-close" onclick="toggleDetail('server')">&#x2715;</div>
+      <div class="sbar-detail-title">&#x2139;&#xFE0F; What is rnaflow_server.py? &mdash; setup for your system</div>
+
+      <!-- Desktop app panel (default) -->
+      <div id="how-desktop">
+        <div style="margin-top:14px;padding:14px 16px;background:rgba(63,185,80,0.07);border:1px solid rgba(63,185,80,0.25);border-radius:10px;font-size:0.85em;line-height:1.7;">
+          <strong style="color:var(--green);">&#x1F389; Nothing to do &mdash; server starts automatically!</strong><br>
+          <span style="color:var(--text2);">The RNAflow desktop app bundles <code>rnaflow_server.py</code> internally. It starts the moment you open the app and stops when you close it. No Terminal commands are ever needed.</span>
+        </div>
+        <div style="margin-top:12px;font-size:0.8em;color:var(--text3);line-height:1.6;">
+          &#x1F512; Runs only on <code>127.0.0.1:7788</code> &mdash; your machine only. Data never leaves your computer.
+        </div>
+      </div>
+
+      <!-- HTML file panel -->
+      <div id="how-html" style="display:none;">
+        <div style="margin-top:14px;" id="server-os-content">
+          <!-- Filled dynamically by showHow() based on detected OS -->
+        </div>
+        <div style="margin-top:10px;padding:10px 12px;background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:8px;font-size:0.79em;color:var(--blue);">
+          &#x1F4A1; Prefer no Terminal? Switch to <strong>Mode B (Run on terminal)</strong> &mdash; Copy button always works without the server.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Env detail -->
+  <!-- Env detail panel -->
+  <div class="sbar-detail" id="sbar-detail-env">
+    <div class="sbar-detail-inner">
+      <div class="sbar-detail-close" onclick="toggleDetail('env')">&#x2715;</div>
+      <div class="sbar-detail-title">&#x1F5A5;&#xFE0F; Compute environment settings</div>
+
+      <!-- LOCAL ─────────────────────────────────────── -->
+      <div id="env-local-panel" style="margin-top:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+          <!-- Option A: Download from SRA -->
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+            <div style="font-size:0.75em;text-transform:uppercase;letter-spacing:0.6px;color:var(--green);font-weight:700;margin-bottom:10px;">&#x2193; Download from NCBI SRA</div>
+            <p style="font-size:0.81em;color:var(--text2);line-height:1.6;margin-bottom:12px;">Enter SRA accession numbers in the Configure page. RNAflow will download the raw FASTQ files directly from NCBI to your local project folder using <code>fasterq-dump</code>.</p>
+            <div style="font-size:0.78em;color:var(--text3);line-height:1.6;">
+              &#x1F4A1; Find SRA accessions at <strong>ncbi.nlm.nih.gov/sra</strong><br>
+              Accessions start with <code>SRR</code>, <code>ERR</code>, or <code>DRR</code>
+            </div>
+          </div>
+
+          <!-- Option B: Browse local files -->
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+            <div style="font-size:0.75em;text-transform:uppercase;letter-spacing:0.6px;color:var(--blue);font-weight:700;margin-bottom:10px;">&#x1F4C2; Use files already on this computer</div>
+            <p style="font-size:0.81em;color:var(--text2);line-height:1.6;margin-bottom:10px;">If your FASTQ files are already on disk, set <strong>Data source &rarr; My own FASTQ files</strong> on the Configure page. Every command then reads from your folder instead of downloading.</p>
+            <button class="btn btn-ghost" onclick="goTo('page-config', document.getElementById('nav-config')); document.getElementById('cfg-datasource').value='local'; applyDataSource();" style="font-size:0.8em;">Use my own FASTQ files &rarr;</button>
+            <div style="font-size:0.75em;color:var(--text3);margin-top:8px;line-height:1.5;">Files should be named: <code>SampleA.fastq</code> or <code>SampleA_1.fastq</code> / <code>SampleA_2.fastq</code></div>
+          </div>
+
+        </div>
+        <div style="margin-top:12px;padding:10px 14px;background:rgba(63,185,80,0.05);border:1px solid rgba(63,185,80,0.15);border-radius:8px;font-size:0.79em;color:var(--text2);">
+          &#x2705; <strong style="color:var(--green);">Local computer selected.</strong> All analysis runs on your machine. Make sure your <code>rnaseq</code> conda environment is active before running commands.
+        </div>
+      </div>
+
+      <!-- HPC ────────────────────────────────────────── -->
+      <div id="env-hpc-panel" style="display:none;margin-top:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+          <!-- Connection settings -->
+          <div style="background:var(--bg2);border:1px solid rgba(124,95,245,0.25);border-radius:10px;padding:16px;">
+            <div style="font-size:0.75em;text-transform:uppercase;letter-spacing:0.6px;color:var(--purple);font-weight:700;margin-bottom:12px;">&#x1F517; Connect to HPC cluster</div>
+            <div class="field" style="margin-bottom:10px;">
+              <label style="font-size:0.7em;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">SSH host (login node)</label>
+              <input id="hpc-host" type="text" placeholder="hpc.university.edu" oninput="updateAll()" style="width:100%;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.82em;margin-top:5px;">
+            </div>
+            <div class="field" style="margin-bottom:10px;">
+              <label style="font-size:0.7em;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Username</label>
+              <input id="hpc-user" type="text" placeholder="your_username" oninput="updateAll()" style="width:100%;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.82em;margin-top:5px;">
+            </div>
+            <div style="margin-top:8px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;font-size:0.75em;color:var(--text3);line-height:1.5;">
+              Generated commands include: <code style="color:var(--purple);">ssh <span id="hpc-ssh-preview">user@hpc.university.edu</span></code><br>
+              Copy &amp; run each script on the cluster via this connection.
+            </div>
+          </div>
+
+          <!-- Raw data location on HPC -->
+          <div style="background:var(--bg2);border:1px solid rgba(124,95,245,0.25);border-radius:10px;padding:16px;">
+            <div style="font-size:0.75em;text-transform:uppercase;letter-spacing:0.6px;color:var(--purple);font-weight:700;margin-bottom:12px;">&#x1F4C2; Raw data path on cluster</div>
+            <div class="field" style="margin-bottom:10px;">
+              <label style="font-size:0.7em;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Path to FASTQ files on HPC</label>
+              <input id="hpc-data-path" type="text" placeholder="/scratch/username/rnaseq/raw_data/" oninput="updateAll()" style="width:100%;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.82em;margin-top:5px;">
+            </div>
+            <div style="font-size:0.75em;color:var(--text3);line-height:1.5;margin-bottom:12px;">This path is used in all generated job scripts so they find your data automatically.</div>
+            <div style="font-size:0.75em;text-transform:uppercase;letter-spacing:0.6px;color:var(--text3);margin-bottom:8px;margin-top:4px;">Job resource settings</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+              <div class="field"><label style="font-size:0.68em;color:var(--text3);">CPUs</label><input id="hpc-cpus" value="8" oninput="updateAll()" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82em;margin-top:4px;"></div>
+              <div class="field"><label style="font-size:0.68em;color:var(--text3);">Memory (GB)</label><input id="hpc-mem" value="32" oninput="updateAll()" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82em;margin-top:4px;"></div>
+              <div class="field"><label style="font-size:0.68em;color:var(--text3);">Wall time (hrs)</label><input id="hpc-time" value="24" oninput="updateAll()" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82em;margin-top:4px;"></div>
+              <div class="field"><label style="font-size:0.68em;color:var(--text3);">Job name</label><input id="hpc-jobname" value="rnaflow" oninput="updateAll()" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82em;margin-top:4px;"></div>
+              <div class="field"><label style="font-size:0.68em;color:var(--text3);">Partition/Queue</label><input id="hpc-partition" value="normal" oninput="updateAll()" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82em;margin-top:4px;"></div>
+              <div class="field"><label style="font-size:0.68em;color:var(--text3);">Email alerts</label><input id="hpc-email" placeholder="you@uni.edu" oninput="updateAll()" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82em;margin-top:4px;"></div>
+            </div>
+          </div>
+
+        </div>
+        <div class="env-note" style="margin-top:10px;">Each pipeline step generates a <code>.sh</code> job script. Submit with <code>sbatch</code> (SLURM), <code>qsub</code> (PBS), or <code>bsub</code> (LSF). &nbsp;&#x26A0;&#xFE0F; Large genome tip: human/wheat/maize need 16&ndash;32 CPUs and 64&ndash;128 GB RAM for the alignment index step.</div>
+      </div>
+
+      <!-- CLOUD ──────────────────────────────────────── -->
+      <div id="env-cloud-panel" style="display:none;margin-top:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+          <!-- Cloud connection -->
+          <div style="background:var(--bg2);border:1px solid rgba(0,150,255,0.25);border-radius:10px;padding:16px;">
+            <div style="font-size:0.75em;text-transform:uppercase;letter-spacing:0.6px;color:var(--blue);font-weight:700;margin-bottom:12px;">&#x1F517; Connect to cloud instance</div>
+            <div class="field" style="margin-bottom:10px;">
+              <label style="font-size:0.7em;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Instance IP / hostname</label>
+              <input id="cloud-host" type="text" placeholder="34.123.45.67 or ec2-34.compute.amazonaws.com" oninput="updateAll()" style="width:100%;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.82em;margin-top:5px;">
+            </div>
+            <div class="field" style="margin-bottom:10px;">
+              <label style="font-size:0.7em;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">SSH username</label>
+              <input id="cloud-user" type="text" placeholder="ubuntu" oninput="updateAll()" style="width:100%;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.82em;margin-top:5px;">
+            </div>
+            <div class="field">
+              <label style="font-size:0.7em;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Working directory on instance</label>
+              <input id="cloud-work-dir" value="/home/ubuntu/rnaseq_project" oninput="updateAll()" style="width:100%;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.82em;margin-top:5px;">
+            </div>
+          </div>
+
+          <!-- Cloud data paths -->
+          <div style="background:var(--bg2);border:1px solid rgba(0,150,255,0.25);border-radius:10px;padding:16px;">
+            <div style="font-size:0.75em;text-transform:uppercase;letter-spacing:0.6px;color:var(--blue);font-weight:700;margin-bottom:12px;">&#x1F4C2; Raw data in cloud storage</div>
+            <div class="field" style="margin-bottom:10px;">
+              <label style="font-size:0.7em;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Data bucket path</label>
+              <input id="cloud-data-path" type="text" placeholder="s3://bucket/fastq/  or  gs://bucket/data/" oninput="updateAll()" style="width:100%;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.82em;margin-top:5px;">
+            </div>
+            <div class="field" style="margin-bottom:10px;">
+              <label style="font-size:0.7em;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Results output bucket path</label>
+              <input id="cloud-out-path" type="text" placeholder="s3://bucket/results/  or  gs://bucket/results/" oninput="updateAll()" style="width:100%;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.82em;margin-top:5px;">
+            </div>
+            <div id="cloud-env-note" style="margin-top:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:0.75em;color:var(--text3);line-height:1.6;">
+              &#x2601;&#xFE0F; Commands will include sync steps: pull data from bucket to instance, run analysis, push results back to bucket.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end settings-bar -->
+
+
+<!-- APP BODY -->
+<div class="app-body">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-section">First time setup</div>
+  <div class="nav-item active" onclick="goTo('page-syscheck', this)" id="nav-syscheck">
+    <div class="nav-num" style="font-size:1.2em;">🩺</div> System check
+    <span class="nav-check">○</span>
+  </div>
+
+  <div class="sidebar-section">Project</div>
+  <div class="nav-item" onclick="goTo('page-config', this)" id="nav-config">
+    <div class="nav-num" style="font-size:1.28em;">⚙</div> Configure project
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-install', this)" id="nav-install">
+    <div class="nav-num" style="font-size:1.28em;">📦</div> Install tools
+    <span class="nav-check">○</span>
+  </div>
+
+  <div class="sidebar-section">Pipeline</div>
+  <div class="nav-item" onclick="goTo('page-download', this)" id="nav-download">
+    <div class="nav-num" style="font-size:1.28em;">⬇</div> Download data
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-qc', this)" id="nav-qc">
+    <div class="nav-num" style="font-size:1.28em;">🔍</div> Quality control
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-trim', this)" id="nav-trim">
+    <div class="nav-num" style="font-size:1.28em;">✂</div> Trimming
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-genome', this)" id="nav-genome">
+    <div class="nav-num" style="font-size:1.28em;">🧬</div> Genome &amp; index
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-align', this)" id="nav-align">
+    <div class="nav-num" style="font-size:1.28em;">🎯</div> Alignment
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-counts', this)" id="nav-counts">
+    <div class="nav-num" style="font-size:1.28em;">#</div> Gene counting
+    <span class="nav-check">○</span>
+  </div>
+
+  <div class="sidebar-section">Analysis</div>
+  <div class="nav-item" onclick="goTo('page-genefamily', this)" id="nav-genefamily">
+    <div class="nav-num" style="font-size:1.28em;">🌿</div> Gene family analysis
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-deseq2', this)" id="nav-deseq2">
+    <div class="nav-num" style="font-size:1.28em;">📊</div> DESeq2 in R
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-plots', this)" id="nav-plots">
+    <div class="nav-num" style="font-size:1.28em;">📈</div> Plots &amp; results
+    <span class="nav-check">○</span>
+  </div>
+
+  <div class="sidebar-section">Advanced</div>
+  <div class="nav-item" onclick="goTo('page-multifactor', this)" id="nav-multifactor">
+    <div class="nav-num" style="font-size:1.28em;">⚗</div> Multi-factor design
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-batch', this)" id="nav-batch">
+    <div class="nav-num" style="font-size:1.28em;">🔄</div> Batch correction
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-results', this); refreshResults()" id="nav-results" data-nostep="1">
+    <div class="nav-num" style="font-size:1.28em;">📂</div> Results &amp; export
+    <span class="nav-check">○</span>
+  </div>
+  <div class="nav-item" onclick="goTo('page-gsea', this)" id="nav-gsea">
+    <div class="nav-num" style="font-size:1.28em;">🌐</div> GSEA &amp; pathways
+    <span class="nav-check">○</span>
+  </div>
+
+  <div class="sidebar-progress">
+    <div class="progress-label">
+      <span>Progress</span>
+      <span id="sb-prog-label">0 / 15</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="sb-prog-fill" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+

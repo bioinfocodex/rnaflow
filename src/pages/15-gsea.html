@@ -1,0 +1,327 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 13: GSEA & PATHWAY ANALYSIS                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-gsea">
+  <div class="page-header">
+    <h1>13 — GSEA &amp; Pathway Analysis <span class="tag tag-orange" style="font-size:0.5em;vertical-align:middle;">Run in RStudio</span></h1>
+    <p>Identify biological pathways and gene sets enriched in your DE results. Goes beyond individual genes to reveal the functional themes driving your experiment.</p>
+  </div>
+
+  <!-- METHOD OVERVIEW -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🗺️</span> Two complementary approaches</div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div style="background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:var(--radius);padding:16px;">
+          <div style="font-weight:700;color:var(--blue);margin-bottom:8px;font-size:0.9em;">📌 ORA — Over-Representation Analysis</div>
+          <div style="font-size:0.81em;color:var(--text2);line-height:1.65;">Takes your <strong>significant gene list</strong> (padj &lt; 0.05) and asks: "Is any GO term or pathway over-represented compared to the genome background?" Fast, simple, widely used.</div>
+          <div style="margin-top:10px;font-size:0.78em;color:var(--blue);">Best for: clear, well-defined gene lists with strong signal</div>
+        </div>
+        <div style="background:rgba(63,185,80,0.07);border:1px solid rgba(63,185,80,0.2);border-radius:var(--radius);padding:16px;">
+          <div style="font-weight:700;color:var(--green);margin-bottom:8px;font-size:0.9em;">📈 GSEA — Gene Set Enrichment Analysis</div>
+          <div style="font-size:0.81em;color:var(--text2);line-height:1.65;">Uses <strong>all genes ranked</strong> by LFC × significance score. Tests whether a gene set's members are concentrated at the top or bottom of the ranked list. More sensitive — captures subtle pathway-level changes.</div>
+          <div style="margin-top:10px;font-size:0.78em;color:var(--green);">Best for: noisy data, modest fold changes, whole-pathway shifts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSTALL -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📦</span> Install required packages (one-time)</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — install the annotation database for your organism</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code" id="gs-install"></pre></div>
+      <table class="ref-table" style="margin-top:10px;">
+        <tr><th>Organism</th><th>OrgDb package</th><th>KEGG code</th><th>Reactome organism</th></tr>
+        <tr><td>Human</td><td><code>org.Hs.eg.db</code></td><td><code>hsa</code></td><td><code>human</code></td></tr>
+        <tr><td>Mouse</td><td><code>org.Mm.eg.db</code></td><td><code>mmu</code></td><td><code>mouse</code></td></tr>
+        <tr><td>Rat</td><td><code>org.Rn.eg.db</code></td><td><code>rno</code></td><td><code>rat</code></td></tr>
+        <tr><td>Yeast</td><td><code>org.Sc.sgd.db</code></td><td><code>sce</code></td><td><code>yeast</code></td></tr>
+        <tr><td>Arabidopsis</td><td><code>org.At.tair.db</code></td><td><code>ath</code></td><td>—</td></tr>
+        <tr><td>Fruit fly</td><td><code>org.Dm.eg.db</code></td><td><code>dme</code></td><td><code>fly</code></td></tr>
+        <tr><td>C. elegans</td><td><code>org.Ce.eg.db</code></td><td><code>cel</code></td><td><code>worm</code></td></tr>
+        <tr><td>Zebrafish</td><td><code>org.Dr.eg.db</code></td><td><code>dre</code></td><td><code>zebrafish</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">⚙️</span> Setup — load results and build gene lists</div>
+    <div class="card-body">
+      <div class="alert warning" id="gs-orgdb-warning" style="display:none;margin-bottom:10px;"></div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — load DESeq2 results and prepare gene lists</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cf">library</span>(clusterProfiler); <span class="cf">library</span>(enrichplot); <span class="cf">library</span>(ggplot2); <span class="cf">library</span>(dplyr)
+<span class="cf">library</span>(<span id="gs-orgdb-lib">org.Sc.sgd.db</span>)  <span class="cc"># your organism's annotation database</span>
+
+<span class="cc"># ─── Edit these ───────────────────────────────────────────────────────────</span>
+base_path  &lt;- <span class="cs">"<span id="gs-base">~/Desktop/RNA-Seq_yeast</span>"</span>
+OrgDb_pkg  &lt;- <span id="gs-orgdb">org.Sc.sgd.db</span>  <span class="cc"># your organism OrgDb</span>
+key_type   &lt;- <span class="cs">"<span id="gs-keytype">ORF</span>"</span>      <span class="cc"># the ID type in RNAflow's results for this organism</span>
+kegg_org   &lt;- <span class="cs">"<span id="gs-kegg">sce</span>"</span>           <span class="cc"># KEGG organism code</span>
+react_org  &lt;- <span class="cs">"<span id="gs-react">yeast</span>"</span>         <span class="cc"># Reactome organism name</span>
+<span class="cc"># ──────────────────────────────────────────────────────────────────────────</span>
+
+<span class="cc"># Load DESeq2 results</span>
+res_df &lt;- <span class="cf">read.csv</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/deseq2_results.csv"</span>))
+<span class="cc"># Drop Ensembl version suffixes (ENSG00000120129.12 → ENSG00000120129):
+# annotation databases store IDs without them</span>
+res_df$gene &lt;- <span class="cf">sub</span>(<span class="cs">"\\.[0-9]+$"</span>, <span class="cs">""</span>, res_df$gene)
+<span class="cc"># An imported count table may use gene symbols (TP53) rather than Ensembl IDs;
+# follow what the results actually contain</span>
+<span class="cf">if</span> (key_type == <span class="cs">"ENSEMBL"</span> &amp;&amp; <span class="cf">mean</span>(<span class="cf">grepl</span>(<span class="cs">"^ENS"</span>, res_df$gene)) &lt; <span class="cn">0.5</span>) {
+  key_type &lt;- <span class="cs">"SYMBOL"</span>
+  <span class="cf">cat</span>(<span class="cs">"Gene IDs look like symbols, so key_type is SYMBOL\n"</span>)
+}
+
+<span class="cc"># Check the IDs actually match the database before going further — a wrong
+# key_type otherwise gives empty results with no error</span>
+id_map &lt;- <span class="cf">bitr</span>(res_df$gene, fromType=key_type, toType=<span class="cs">"ENTREZID"</span>, OrgDb=OrgDb_pkg)
+<span class="cf">cat</span>(<span class="cs">"Genes matched in"</span>, <span class="cs">"<span id="gs-orgdb-name">org.Sc.sgd.db</span>"</span>, <span class="cs">":"</span>, <span class="cf">length</span>(<span class="cf">unique</span>(id_map[[key_type]])), <span class="cs">"/"</span>, <span class="cf">nrow</span>(res_df), <span class="cs">"\n"</span>)
+<span class="cf">if</span> (<span class="cf">length</span>(<span class="cf">unique</span>(id_map[[key_type]])) &lt; <span class="cn">0.5</span> * <span class="cf">nrow</span>(res_df))
+  <span class="cf">warning</span>(<span class="cs">"Fewer than half the genes matched — check key_type against head(res_df$gene)"</span>)
+
+<span class="cc"># 1. Significant gene list for ORA (padj&lt;0.05, |LFC|&gt;1)</span>
+sig_genes &lt;- res_df$gene[!<span class="cf">is.na</span>(res_df$padj) &amp; res_df$padj &lt; <span class="cn">0.05</span> &amp;
+                          <span class="cf">abs</span>(res_df$log2FoldChange) &gt; <span class="cn">1</span>]
+<span class="cf">cat</span>(<span class="cs">"Significant genes (ORA input):"</span>, <span class="cf">length</span>(sig_genes), <span class="cs">"\n"</span>)
+
+<span class="cc"># 2. Ranked gene list for GSEA — all tested genes, ranked by the Wald statistic.
+# (Ranking by signed -log10 padj ties thousands of genes at padj = 1.)</span>
+res_ranked &lt;- res_df[!<span class="cf">is.na</span>(res_df$stat), ]
+res_ranked$score &lt;- res_ranked$stat
+res_ranked &lt;- res_ranked[<span class="cf">order</span>(res_ranked$score, decreasing=<span class="cn">TRUE</span>), ]
+gene_list &lt;- <span class="cf">setNames</span>(res_ranked$score, res_ranked$gene)
+<span class="cf">cat</span>(<span class="cs">"Ranked gene list (GSEA input):"</span>, <span class="cf">length</span>(gene_list), <span class="cs">"genes\n"</span>)
+
+<span class="cc"># 3. The same lists as Entrez IDs, which KEGG and Reactome need</span>
+entrez_sig &lt;- <span class="cf">unique</span>(id_map$ENTREZID[id_map[[key_type]] %in% sig_genes])
+gene_list_entrez &lt;- gene_list[id_map[[key_type]]]
+<span class="cf">names</span>(gene_list_entrez) &lt;- id_map$ENTREZID
+gene_list_entrez &lt;- <span class="cf">sort</span>(gene_list_entrez[!<span class="cf">duplicated</span>(<span class="cf">names</span>(gene_list_entrez)) &amp; !<span class="cf">is.na</span>(gene_list_entrez)], decreasing=<span class="cn">TRUE</span>)</pre></div>
+    </div>
+  </div>
+
+  <!-- GO ORA -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(88,166,255,0.07);"><span class="card-icon">🔵</span> GO Enrichment — Over-Representation Analysis (ORA)</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — GO ORA with clusterProfiler</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># GO Biological Process ORA</span>
+go_bp &lt;- <span class="cf">enrichGO</span>(gene         = sig_genes,
+                   OrgDb        = OrgDb_pkg,
+                   keyType      = key_type,
+                   ont          = <span class="cs">"BP"</span>,        <span class="cc"># "BP", "MF", or "CC"</span>
+                   pAdjustMethod = <span class="cs">"BH"</span>,
+                   pvalueCutoff = <span class="cn">0.05</span>,
+                   qvalueCutoff = <span class="cn">0.20</span>,
+                   readable     = <span class="cn">TRUE</span>)
+
+go_df &lt;- <span class="cf">as.data.frame</span>(go_bp)
+<span class="cf">cat</span>(<span class="cs">"GO BP terms enriched:"</span>, <span class="cf">nrow</span>(go_df), <span class="cs">"\n"</span>)
+<span class="cf">write.csv</span>(go_df, <span class="cf">paste0</span>(base_path, <span class="cs">"/results/GO_BP_ORA.csv"</span>), row.names=<span class="cn">FALSE</span>)
+
+<span class="cc"># Dot plot (top 20 terms, sized by gene count, coloured by p-value)</span>
+p_dot &lt;- <span class="cf">dotplot</span>(go_bp, showCategory=<span class="cn">20</span>, title=<span class="cs">"GO Biological Process — ORA"</span>) +
+  <span class="cf">theme_minimal</span>(base_size=<span class="cn">12</span>)
+<span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/GO_BP_dotplot.png"</span>), p_dot, width=<span class="cn">10</span>, height=<span class="cn">10</span>, dpi=<span class="cn">300</span>)
+<span class="cf">cat</span>(<span class="cs">"GO dotplot saved!\n"</span>)
+
+<span class="cc"># Also run Molecular Function and Cellular Component</span>
+go_mf &lt;- <span class="cf">enrichGO</span>(gene=sig_genes, OrgDb=OrgDb_pkg, keyType=key_type, ont=<span class="cs">"MF"</span>,
+                   pAdjustMethod=<span class="cs">"BH"</span>, pvalueCutoff=<span class="cn">0.05</span>, readable=<span class="cn">TRUE</span>)
+go_cc &lt;- <span class="cf">enrichGO</span>(gene=sig_genes, OrgDb=OrgDb_pkg, keyType=key_type, ont=<span class="cs">"CC"</span>,
+                   pAdjustMethod=<span class="cs">"BH"</span>, pvalueCutoff=<span class="cn">0.05</span>, readable=<span class="cn">TRUE</span>)
+<span class="cf">write.csv</span>(<span class="cf">as.data.frame</span>(go_mf), <span class="cf">paste0</span>(base_path, <span class="cs">"/results/GO_MF_ORA.csv"</span>), row.names=<span class="cn">FALSE</span>)
+<span class="cf">write.csv</span>(<span class="cf">as.data.frame</span>(go_cc), <span class="cf">paste0</span>(base_path, <span class="cs">"/results/GO_CC_ORA.csv"</span>), row.names=<span class="cn">FALSE</span>)
+<span class="cf">cat</span>(<span class="cs">"GO MF terms:"</span>, <span class="cf">nrow</span>(<span class="cf">as.data.frame</span>(go_mf)), <span class="cs">" | CC terms:"</span>, <span class="cf">nrow</span>(<span class="cf">as.data.frame</span>(go_cc)), <span class="cs">"\n"</span>)</pre></div>
+    </div>
+  </div>
+
+  <!-- GSEA -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(63,185,80,0.07);"><span class="card-icon">📈</span> GSEA — Gene Set Enrichment Analysis (preranked)</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — GSEA with clusterProfiler</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># GO GSEA (uses all ranked genes — no threshold cutoff needed)</span>
+gsea_bp &lt;- <span class="cf">gseGO</span>(geneList      = gene_list,
+                  OrgDb         = OrgDb_pkg,
+                  keyType       = key_type,
+                  ont           = <span class="cs">"BP"</span>,
+                  minGSSize     = <span class="cn">10</span>,
+                  maxGSSize     = <span class="cn">500</span>,
+                  pvalueCutoff  = <span class="cn">0.05</span>,
+                  pAdjustMethod = <span class="cs">"BH"</span>,
+                  verbose       = <span class="cn">FALSE</span>,
+                  seed          = <span class="cn">42</span>)
+
+gsea_df &lt;- <span class="cf">as.data.frame</span>(gsea_bp)
+<span class="cf">cat</span>(<span class="cs">"GSEA GO BP terms significant:"</span>, <span class="cf">nrow</span>(gsea_df), <span class="cs">"\n"</span>)
+<span class="cf">cat</span>(<span class="cs">"  Activated (NES&gt;0):"</span>,  <span class="cf">sum</span>(gsea_df$NES &gt; <span class="cn">0</span>), <span class="cs">"\n"</span>)
+<span class="cf">cat</span>(<span class="cs">"  Suppressed (NES&lt;0):"</span>, <span class="cf">sum</span>(gsea_df$NES &lt; <span class="cn">0</span>), <span class="cs">"\n"</span>)
+<span class="cf">write.csv</span>(gsea_df, <span class="cf">paste0</span>(base_path, <span class="cs">"/results/GSEA_GO_BP.csv"</span>), row.names=<span class="cn">FALSE</span>)
+
+<span class="cc"># Ridge plot — shows distribution of ranked genes within each term</span>
+p_ridge &lt;- <span class="cf">ridgeplot</span>(gsea_bp, showCategory=<span class="cn">15</span>) +
+  <span class="cf">theme_minimal</span>(base_size=<span class="cn">11</span>) +
+  <span class="cf">labs</span>(title=<span class="cs">"GSEA GO Biological Process — Ridge Plot"</span>)
+<span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/GSEA_ridgeplot.png"</span>), p_ridge, width=<span class="cn">11</span>, height=<span class="cn">10</span>, dpi=<span class="cn">300</span>)
+
+<span class="cc"># Enrichment score plot for top terms</span>
+<span class="cf">gseaplot2</span>(gsea_bp, geneSetID=<span class="cn">1</span>:<span class="cf">min</span>(<span class="cn">3</span>,<span class="cf">nrow</span>(gsea_df)),
+          title=<span class="cs">"Top GSEA enrichment scores"</span>)
+<span class="cf">cat</span>(<span class="cs">"GSEA plots saved!\n"</span>)</pre></div>
+      <div class="alert info" style="margin-top:10px;"><span class="alert-icon">ℹ️</span> <strong>NES (Normalized Enrichment Score):</strong> NES &gt; 0 means the gene set is enriched in upregulated genes. NES &lt; 0 means it's enriched in downregulated genes. Only terms with |NES| &gt; 1 and padj &lt; 0.05 are typically reported.</div>
+    </div>
+  </div>
+
+  <!-- KEGG -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(227,179,65,0.07);"><span class="card-icon">🗾</span> KEGG Pathway Analysis</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — KEGG ORA and GSEA</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># ─── KEGG ORA ────────────────────────────────────────────────────────────
+# Entrez IDs from the setup block; keyType "ncbi-geneid" lets KEGG map them
+# for every organism, including yeast and Arabidopsis.</span>
+kegg_ora &lt;- <span class="cf">enrichKEGG</span>(gene          = entrez_sig,
+                        organism      = kegg_org,
+                        keyType       = <span class="cs">"ncbi-geneid"</span>,
+                        pAdjustMethod = <span class="cs">"BH"</span>,
+                        pvalueCutoff  = <span class="cn">0.05</span>)
+
+kegg_df &lt;- <span class="cf">as.data.frame</span>(kegg_ora)
+<span class="cf">cat</span>(<span class="cs">"KEGG pathways enriched:"</span>, <span class="cf">nrow</span>(kegg_df), <span class="cs">"\n"</span>)
+<span class="cf">write.csv</span>(kegg_df, <span class="cf">paste0</span>(base_path, <span class="cs">"/results/KEGG_ORA.csv"</span>), row.names=<span class="cn">FALSE</span>)
+
+<span class="cc"># KEGG bar plot</span>
+p_kegg &lt;- <span class="cf">barplot</span>(kegg_ora, showCategory=<span class="cn">20</span>, title=<span class="cs">"KEGG Pathway Enrichment"</span>) +
+  <span class="cf">theme_minimal</span>(base_size=<span class="cn">12</span>)
+<span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/KEGG_barplot.png"</span>), p_kegg, width=<span class="cn">10</span>, height=<span class="cn">8</span>, dpi=<span class="cn">300</span>)
+
+<span class="cc"># ─── KEGG GSEA ───────────────────────────────────────────────────────────</span>
+gsea_kegg &lt;- <span class="cf">gseKEGG</span>(geneList      = gene_list_entrez,
+                      organism      = kegg_org,
+                      keyType       = <span class="cs">"ncbi-geneid"</span>,
+                      minGSSize     = <span class="cn">10</span>,
+                      pvalueCutoff  = <span class="cn">0.05</span>,
+                      pAdjustMethod = <span class="cs">"BH"</span>,
+                      verbose       = <span class="cn">FALSE</span>)
+<span class="cf">write.csv</span>(<span class="cf">as.data.frame</span>(gsea_kegg), <span class="cf">paste0</span>(base_path, <span class="cs">"/results/KEGG_GSEA.csv"</span>), row.names=<span class="cn">FALSE</span>)
+<span class="cf">cat</span>(<span class="cs">"KEGG GSEA terms:"</span>, <span class="cf">nrow</span>(<span class="cf">as.data.frame</span>(gsea_kegg)), <span class="cs">"\n"</span>)</pre></div>
+    </div>
+  </div>
+
+  <!-- FGSEA HALLMARK (v3.2) -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🎯</span> fgsea — MSigDB Hallmark gene sets</div>
+    <div class="card-body">
+      <p>The 50 Hallmark sets each summarise one well-defined biological process (for example <em>inflammatory response</em>, <em>hypoxia</em>, <em>oxidative phosphorylation</em>), so the result is short and easy to interpret. Every gene is ranked by the DESeq2 statistic and fgsea tests whether a set's genes sit towards the top (activated) or bottom (suppressed). The <strong>enrichment ranking plots</strong> show, for each top pathway, the running enrichment score, where its genes fall in the ranking, and the ranked statistic. Needs internet the first time, to download the gene sets.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-fgsea">...</pre></div>
+    </div>
+  </div>
+
+  <!-- REACTOME -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(188,140,255,0.07);"><span class="card-icon">⚛️</span> Reactome Pathway Analysis</div>
+    <div class="card-body">
+      <div class="alert warning"><span class="alert-icon">⚠️</span> ReactomePA requires <strong>Entrez IDs</strong>. Use <code>bitr()</code> to convert gene symbols → Entrez IDs. Reactome supports: human, mouse, rat, zebrafish, fly, worm, and yeast.</div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — Reactome ORA and GSEA</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cf">library</span>(ReactomePA)
+
+<span class="cc"># Convert gene names to Entrez IDs (required by ReactomePA)</span>
+id_map &lt;- <span class="cf">bitr</span>(sig_genes, fromType=key_type, toType=<span class="cs">"ENTREZID"</span>, OrgDb=OrgDb_pkg)
+entrez_sig &lt;- id_map$ENTREZID
+<span class="cf">cat</span>(<span class="cs">"Mapped to Entrez:"</span>, <span class="cf">length</span>(entrez_sig), <span class="cs">"/"</span>, <span class="cf">length</span>(sig_genes), <span class="cs">"genes\n"</span>)
+
+<span class="cc"># Reactome ORA</span>
+react_ora &lt;- <span class="cf">enrichPathway</span>(gene          = entrez_sig,
+                             organism      = react_org,
+                             pAdjustMethod = <span class="cs">"BH"</span>,
+                             pvalueCutoff  = <span class="cn">0.05</span>,
+                             readable      = <span class="cn">TRUE</span>)
+
+react_df &lt;- <span class="cf">as.data.frame</span>(react_ora)
+<span class="cf">cat</span>(<span class="cs">"Reactome pathways enriched:"</span>, <span class="cf">nrow</span>(react_df), <span class="cs">"\n"</span>)
+<span class="cf">write.csv</span>(react_df, <span class="cf">paste0</span>(base_path, <span class="cs">"/results/Reactome_ORA.csv"</span>), row.names=<span class="cn">FALSE</span>)
+
+p_react &lt;- <span class="cf">dotplot</span>(react_ora, showCategory=<span class="cn">20</span>, title=<span class="cs">"Reactome Pathway ORA"</span>) +
+  <span class="cf">theme_minimal</span>(base_size=<span class="cn">12</span>)
+<span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/Reactome_dotplot.png"</span>), p_react, width=<span class="cn">10</span>, height=<span class="cn">10</span>, dpi=<span class="cn">300</span>)
+
+<span class="cc"># Reactome GSEA — convert ranked list to Entrez IDs</span>
+id_map_all &lt;- <span class="cf">bitr</span>(res_ranked$gene, fromType=key_type, toType=<span class="cs">"ENTREZID"</span>, OrgDb=OrgDb_pkg)
+ranked_entrez &lt;- <span class="cf">setNames</span>(
+  res_ranked$score[<span class="cf">match</span>(id_map_all[[key_type]], res_ranked$gene)],
+  id_map_all$ENTREZID
+)
+ranked_entrez &lt;- <span class="cf">sort</span>(ranked_entrez, decreasing=<span class="cn">TRUE</span>)
+ranked_entrez &lt;- ranked_entrez[!<span class="cf">duplicated</span>(<span class="cf">names</span>(ranked_entrez))]
+
+gsea_react &lt;- <span class="cf">gsePathway</span>(geneList=ranked_entrez, organism=react_org,
+                           pvalueCutoff=<span class="cn">0.05</span>, pAdjustMethod=<span class="cs">"BH"</span>, verbose=<span class="cn">FALSE</span>)
+<span class="cf">write.csv</span>(<span class="cf">as.data.frame</span>(gsea_react), <span class="cf">paste0</span>(base_path, <span class="cs">"/results/Reactome_GSEA.csv"</span>), row.names=<span class="cn">FALSE</span>)
+<span class="cf">cat</span>(<span class="cs">"Reactome GSEA terms:"</span>, <span class="cf">nrow</span>(<span class="cf">as.data.frame</span>(gsea_react)), <span class="cs">"\n"</span>)</pre></div>
+    </div>
+  </div>
+
+  <!-- VISUALIZATION -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🎨</span> Network visualizations — enrichment map &amp; concept network</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — enrichment map and gene-concept network</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cf">library</span>(enrichplot)
+
+<span class="cc"># ─── Enrichment map: shows overlap between GO terms ───</span>
+go_bp_sim &lt;- <span class="cf">pairwise_termsim</span>(go_bp)  <span class="cc"># compute term similarity</span>
+p_emap &lt;- <span class="cf">emapplot</span>(go_bp_sim, showCategory=<span class="cn">30</span>, layout=<span class="cs">"kk"</span>) +
+  <span class="cf">ggtitle</span>(<span class="cs">"GO BP Enrichment Map"</span>)
+<span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/GO_enrichment_map.png"</span>), p_emap,
+       width=<span class="cn">13</span>, height=<span class="cn">11</span>, dpi=<span class="cn">300</span>)
+
+<span class="cc"># ─── Concept network: genes connected to their GO terms ───</span>
+<span class="cc"># Shows which specific genes drive each enriched term</span>
+p_cnet &lt;- <span class="cf">cnetplot</span>(go_bp, showCategory=<span class="cn">8</span>, colorEdge=<span class="cn">TRUE</span>,
+                    node_label=<span class="cs">"gene"</span>,
+                    foldChange=<span class="cf">setNames</span>(res_df$log2FoldChange, res_df$gene)) +
+  <span class="cf">ggtitle</span>(<span class="cs">"Gene-Concept Network (top 8 GO terms)"</span>) +
+  <span class="cf">scale_color_gradient2</span>(name=<span class="cs">"log2FC"</span>, low=<span class="cs">"#58a6ff"</span>, mid=<span class="cs">"white"</span>, high=<span class="cs">"#f0883e"</span>)
+<span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/GO_cnetplot.png"</span>), p_cnet,
+       width=<span class="cn">13</span>, height=<span class="cn">11</span>, dpi=<span class="cn">300</span>)
+
+<span class="cc"># ─── Upset plot: genes shared across multiple GO terms ───</span>
+p_upset &lt;- <span class="cf">upsetplot</span>(go_bp, n=<span class="cn">10</span>)
+<span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/GO_upsetplot.png"</span>), p_upset,
+       width=<span class="cn">12</span>, height=<span class="cn">6</span>, dpi=<span class="cn">300</span>)
+<span class="cf">cat</span>(<span class="cs">"Network and upset plots saved!\n"</span>)</pre></div>
+    </div>
+  </div>
+
+  <!-- OUTPUT FILES TABLE -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📁</span> Expected output files in <code>results/</code></div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>File</th><th>Contents</th></tr>
+        <tr><td><code>GO_BP_ORA.csv</code></td><td>GO Biological Process enrichment table (ORA)</td></tr>
+        <tr><td><code>GO_MF_ORA.csv</code></td><td>GO Molecular Function enrichment table (ORA)</td></tr>
+        <tr><td><code>GO_CC_ORA.csv</code></td><td>GO Cellular Component enrichment table (ORA)</td></tr>
+        <tr><td><code>GO_BP_dotplot.png</code></td><td>Dot plot — top 20 GO BP terms, sized by gene count</td></tr>
+        <tr><td><code>GSEA_GO_BP.csv</code></td><td>GO GSEA results table with NES scores</td></tr>
+        <tr><td><code>GSEA_ridgeplot.png</code></td><td>Ridge plot of top GSEA terms</td></tr>
+        <tr><td><code>KEGG_ORA.csv</code> / <code>KEGG_GSEA.csv</code></td><td>KEGG pathway enrichment and GSEA tables</td></tr>
+        <tr><td><code>KEGG_barplot.png</code></td><td>KEGG pathway bar chart</td></tr>
+        <tr><td><code>Reactome_ORA.csv</code> / <code>Reactome_GSEA.csv</code></td><td>Reactome pathway enrichment tables</td></tr>
+        <tr><td><code>Reactome_dotplot.png</code></td><td>Reactome pathway dot plot</td></tr>
+        <tr><td><code>GO_enrichment_map.png</code></td><td>Network of GO term overlaps</td></tr>
+        <tr><td><code>GO_cnetplot.png</code></td><td>Gene-concept network — genes to GO terms</td></tr>
+        <tr><td><code>GO_upsetplot.png</code></td><td>Genes shared across top GO terms</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-gsea')">✅ Mark complete — Step 13 of 13 🎉 Analysis pipeline done!</button>
+  </div>
+</div>
+

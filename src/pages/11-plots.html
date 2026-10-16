@@ -1,0 +1,32 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 9: PLOTS                                           -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-plots">
+  <div class="page-header">
+    <h1>9 — Plots &amp; Results <span class="tag tag-orange" style="font-size:0.5em; vertical-align:middle;">Run in RStudio</span></h1>
+    <p>Generate publication-quality visualizations of your differential expression results.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🌋</span> Volcano plot</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-volcano">...</pre></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🌡️</span> Heatmap — top 40 genes</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-heatmap">...</pre></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🎯</span> PCA plot — sample quality check</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-pca">...</pre></div>
+      <div class="alert success"><span class="alert-icon">✅</span> <strong>Good PCA result:</strong> Replicates from the same condition cluster tightly together. The two conditions are far apart on PC1. PC1 explains >50% of total variance.</div>
+    </div>
+  </div>
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-plots'); goTo('page-multifactor', document.getElementById('nav-multifactor'))">Mark done &amp; next → Multi-factor design</button>
+  </div>
+</div>
+

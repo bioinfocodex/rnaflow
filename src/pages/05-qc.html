@@ -1,0 +1,34 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 3: QC                                              -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-qc">
+  <div class="page-header">
+    <h1>3 — Quality Control</h1>
+    <p>Check read quality before processing. FastQC generates per-sample reports; MultiQC combines them.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🔬</span> Run FastQC + MultiQC</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-fastqc">...</pre></div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — combine all reports</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-multiqc">...</pre></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📋</span> FastQC result guide</div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>Module</th><th>Expected result</th><th>If it fails</th></tr>
+        <tr><td>Per base sequence quality</td><td><span class="tag tag-green">✅ Green</span></td><td>Increase trimming quality threshold</td></tr>
+        <tr><td>Per base sequence content</td><td><span class="tag tag-red">❌ Fail — normal!</span></td><td>Already fixed by trimming first 5 bases</td></tr>
+        <tr><td>Adapter content</td><td><span class="tag tag-green">✅ Green</span></td><td>Add adapter sequence to fastp</td></tr>
+        <tr><td>Sequence duplication</td><td><span class="tag tag-yellow">⚠️ Warning — normal!</span></td><td>No action — highly expressed genes cause this</td></tr>
+        <tr><td>Per sequence GC content</td><td><span class="tag tag-green">✅ Green</span></td><td>Red = possible contamination — investigate</td></tr>
+        <tr><td>Per tile sequence quality</td><td><span class="tag tag-red">❌ Fail — normal!</span></td><td>Machine issue — safe to ignore</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-qc'); goTo('page-trim', document.getElementById('nav-trim'))">Mark done &amp; next →</button>
+  </div>
+</div>
+

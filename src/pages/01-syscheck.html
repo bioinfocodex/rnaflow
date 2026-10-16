@@ -1,0 +1,268 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE: SYSTEM CHECK                                       -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page active" id="page-syscheck">
+  <div class="page-header">
+    <h1>🩺 System Check — Run This First!</h1>
+    <p>Check for old conflicting software before installing anything. This prevents the version conflicts that cause most beginner problems.</p>
+  </div>
+
+  <!-- SERVER CONNECTION BANNER MOVED TO TOP OF APP -->
+
+  <!-- HOW TO USE -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📖</span> How to use this page</div>
+    <div class="card-body">
+      <div class="alert info">
+        <span class="alert-icon">💡</span>
+        <div>Open your Terminal (<strong>Cmd + Space → type Terminal → Enter</strong>), then run the check commands below one by one. Compare what you see to the result guide, and use the fix commands if needed.</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:14px;">
+        <div style="background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:14px; text-align:center;">
+          <div style="font-size:1.6em; margin-bottom:6px;">1️⃣</div>
+          <div style="font-size:0.82em; color:var(--text2);">Run the <strong style="color:var(--text)">check command</strong> in Terminal</div>
+        </div>
+        <div style="background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:14px; text-align:center;">
+          <div style="font-size:1.6em; margin-bottom:6px;">2️⃣</div>
+          <div style="font-size:0.82em; color:var(--text2);">Read the <strong style="color:var(--text)">result guide</strong> to understand what you found</div>
+        </div>
+        <div style="background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:14px; text-align:center;">
+          <div style="font-size:1.6em; margin-bottom:6px;">3️⃣</div>
+          <div style="font-size:0.82em; color:var(--text2);">Run the <strong style="color:var(--text)">fix commands</strong> if old software is found</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECK 1: SHELL -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(88,166,255,0.08);">
+      <span class="card-icon">🐚</span> Check 1 — Which shell are you using?
+      <span class="tag tag-blue" style="margin-left:auto;">Start here</span>
+    </div>
+    <div class="card-body">
+      <p>Modern macOS uses <strong>zsh</strong>. Old Macs use <strong>bash</strong>. This matters for Conda setup.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — check shell</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code">echo $SHELL</pre></div>
+      <table class="ref-table" style="margin-top:10px;">
+        <tr><th>You see</th><th>Meaning</th><th>Action</th></tr>
+        <tr><td><code>/bin/zsh</code></td><td>✅ Modern zsh — perfect</td><td>No action needed</td></tr>
+        <tr><td><code>/bin/bash</code></td><td>⚠️ Old bash shell</td><td>Run fix below to switch to zsh</td></tr>
+      </table>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — fix: switch to zsh (only if you saw /bin/bash)</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Switch to zsh (modern macOS default)</span>
+chsh -s /bin/zsh
+<span class="cc"># Close Terminal completely (Cmd+Q) and reopen it</span></pre></div>
+    </div>
+  </div>
+
+  <!-- CHECK 2: CONDA -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(240,136,62,0.08);">
+      <span class="card-icon">🐍</span> Check 2 — Conda / Anaconda / Miniconda installed?
+      <span class="tag tag-orange" style="margin-left:auto;">Most common problem</span>
+    </div>
+    <div class="card-body">
+      <p>Old Anaconda (version 4.x or earlier) causes installation failures. We need Conda 23+ for bioinformatics tools to install correctly.</p>
+
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — check conda</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Check if conda exists and what version</span>
+conda --version
+
+<span class="cc"># Check where it is installed</span>
+conda info | grep "base environment"
+
+<span class="cc"># Check which type (Anaconda / Miniconda / Miniforge)</span>
+conda info | grep "active env location"</pre></div>
+
+      <table class="ref-table">
+        <tr><th>You see</th><th>Meaning</th><th>Action</th></tr>
+        <tr><td><code>command not found: conda</code></td><td>✅ Clean — nothing installed</td><td>Go straight to Install Tools step</td></tr>
+        <tr><td><code>conda 23.x.x</code> or higher</td><td>✅ Modern version — good</td><td>No action needed</td></tr>
+        <tr><td><code>conda 4.x.x</code> or lower</td><td>❌ Very old — must remove</td><td>Run the removal commands below</td></tr>
+        <tr><td><code>/opt/anaconda3</code> in path</td><td>⚠️ Old Anaconda location</td><td>Run removal commands below</td></tr>
+        <tr><td><code>/opt/miniconda3</code> in path</td><td>⚠️ Check version number</td><td>If version < 23, remove and reinstall</td></tr>
+        <tr><td><code>(base)</code> at start of prompt</td><td>ℹ️ Conda is active</td><td>Check version — ok if 23+</td></tr>
+      </table>
+
+      <h3>🗑️ Remove old Anaconda/Conda (only run if version was old or causing problems):</h3>
+      <div class="alert danger"><span class="alert-icon">⚠️</span> <strong>Only run these if</strong> your conda version was 4.x or below, or if you had installation errors. Skip if conda is already version 23+.</div>
+
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — step 1: try normal uninstall first</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Try the Anaconda uninstaller (may fail on old versions — that's ok)</span>
+conda install anaconda-clean -y
+anaconda-clean --yes</pre></div>
+
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — step 2: force remove the main folder</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Remove Anaconda (try without sudo first)</span>
+rm -rf /opt/anaconda3
+
+<span class="cc"># If you get "Permission denied", use sudo:</span>
+sudo rm -rf /opt/anaconda3
+
+<span class="cc"># Also remove Miniconda if present</span>
+rm -rf ~/miniconda3
+rm -rf ~/opt/miniconda3
+sudo rm -rf /opt/miniconda3
+
+<span class="cc"># Remove hidden config files</span>
+rm -rf ~/.conda
+rm -rf ~/.condarc</pre></div>
+
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — step 3: clean up shell config file</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Open your shell config in a text editor</span>
+nano ~/.zshrc
+
+<span class="cc"># Look for and DELETE these lines (use arrow keys + Ctrl+K to delete a line):</span>
+<span class="cc"># >>> conda initialize >>></span>
+<span class="cc"># !! Contents within this block are managed by 'conda init' !!</span>
+<span class="cc"># __conda_setup= ... (several lines)</span>
+<span class="cc"># <<< conda initialize <<<</span>
+
+<span class="cc"># Save: press Ctrl+X → type Y → press Enter</span>
+<span class="cc"># Then close and reopen Terminal completely (Cmd+Q)</span></pre></div>
+
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — step 4: verify conda is gone</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code">conda --version
+<span class="cc"># Expected: "zsh: command not found: conda"</span>
+<span class="cc"># That means it's cleanly removed ✅</span></pre></div>
+    </div>
+  </div>
+
+  <!-- CHECK 3: HOMEBREW -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(188,140,255,0.08);">
+      <span class="card-icon">🍺</span> Check 3 — Homebrew installed and working?
+    </div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — check homebrew</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code">brew --version</pre></div>
+      <table class="ref-table">
+        <tr><th>You see</th><th>Meaning</th><th>Action</th></tr>
+        <tr><td><code>Homebrew 4.x.x</code></td><td>✅ Installed and working</td><td>No action needed</td></tr>
+        <tr><td><code>command not found: brew</code></td><td>⚠️ Not installed</td><td>Install it in Step 1</td></tr>
+        <tr><td>Permission errors</td><td>⚠️ Folder permissions issue</td><td>Run fix below</td></tr>
+      </table>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — fix homebrew permissions (if you saw permission errors)</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Fix ownership of Homebrew folders (use your actual username)</span>
+sudo chown -R $(whoami) /usr/local/share/man/man7
+chmod u+w /usr/local/share/man/man7
+
+<span class="cc"># Fix all Homebrew directory permissions at once</span>
+sudo chown -R $(whoami) $(brew --prefix)/*</pre></div>
+    </div>
+  </div>
+
+  <!-- CHECK 4: BIOINFORMATICS TOOLS -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(63,185,80,0.08);">
+      <span class="card-icon">🔧</span> Check 4 — Old bioinformatics tools already installed?
+    </div>
+    <div class="card-body">
+      <p>Run all of these. RNAflow expects the exact versions below — a different version can change your results or break a step.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — check all RNA tools</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Check each tool — note the version number you see</span>
+fastqc --version
+fastp --version
+hisat2 --version
+samtools --version
+featureCounts -v
+fasterq-dump --version
+multiqc --version</pre></div>
+
+      <table class="ref-table">
+        <thead><tr><th>Tool</th><th>Version RNAflow expects</th><th>If it differs</th></tr></thead>
+        <tbody id="env-version-rows"></tbody>
+      </table>
+
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — fix: bring the environment to the pinned versions</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code" id="cmd-fix-env"></pre></div>
+    </div>
+  </div>
+
+  <!-- CHECK 5: R -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(227,179,65,0.08);">
+      <span class="card-icon">📊</span> Check 5 — R version and DESeq2 installed?
+    </div>
+    <div class="card-body">
+      <p>R and every R package now come from the <code>rnaseq</code> environment, so check them from a terminal, not from a separately installed RStudio.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — check R and packages</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code">conda activate rnaseq
+<span class="cc"># Should point inside your conda folder, e.g. …/envs/rnaseq/bin/Rscript</span>
+which Rscript
+Rscript -e 'for (p in c("DESeq2","tximport","apeglm","ggplot2","pheatmap","ggrepel","dplyr")) cat(sprintf("%-10s %s\n", p, tryCatch(as.character(packageVersion(p)), error=function(e) "MISSING")))'</pre></div>
+
+      <table class="ref-table">
+        <tr><th>You see</th><th>Meaning</th><th>Action</th></tr>
+        <tr><td>Versions matching the table in Check 4</td><td>✅ Good</td><td>No action needed</td></tr>
+        <tr><td><code>which Rscript</code> points outside conda</td><td>❌ Wrong R</td><td>Run <code>conda activate rnaseq</code> first</td></tr>
+        <tr><td>MISSING, or a different version</td><td>❌ Environment out of date</td><td>Run the fix command in Check 4</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- CHECK 6: PYTHON -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(248,81,73,0.08);">
+      <span class="card-icon">🐍</span> Check 6 — Python version in RNA-seq environment
+    </div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — check python</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># First activate the rnaseq environment</span>
+conda activate rnaseq
+
+<span class="cc"># Check Python version</span>
+python --version
+
+<span class="cc"># Check the environment is correct</span>
+conda info --envs</pre></div>
+
+      <table class="ref-table">
+        <tr><th>You see</th><th>Meaning</th><th>Action</th></tr>
+        <tr><td>Python 3.14.8</td><td>✅ Matches the pinned environment</td><td>No action needed</td></tr>
+        <tr><td>Any other version</td><td>⚠️ Environment made by an older RNAflow</td><td>Rebuild it with the command below</td></tr>
+        <tr><td>conda: command not found</td><td>❌ Conda not set up yet</td><td>Go to Step 1 to install</td></tr>
+        <tr><td>rnaseq not in env list</td><td>❌ Environment not created</td><td>Create it in Step 1</td></tr>
+      </table>
+
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — fix: rebuild the rnaseq environment from the pinned file</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code" id="cmd-recreate-env"></pre></div>
+    </div>
+  </div>
+
+  <!-- CLEAN SYSTEM SUMMARY -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(63,185,80,0.08);">
+      <span class="card-icon">✅</span> What a clean system looks like before starting
+    </div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — final verification — all 8 checks</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Run all checks in one go — paste this entire block</span>
+echo "=== Shell ===" && echo $SHELL
+echo "=== Conda ===" && conda --version
+echo "=== Python ===" && python --version
+echo "=== FastQC ===" && fastqc --version
+echo "=== HISAT2 ===" && hisat2 --version | head -1
+echo "=== Samtools ===" && samtools --version | head -1
+echo "=== fasterq-dump ===" && fasterq-dump --version
+echo "=== Homebrew ===" && brew --version | head -1
+echo "=== All checks done ==="</pre></div>
+
+      <div class="alert success" style="margin-top:12px;">
+        <span class="alert-icon">✅</span>
+        <div>
+          <strong>When everything is clean, you should see something like:</strong><br>
+          <span style="font-family:var(--mono); font-size:0.85em; color:var(--green);">
+            Shell = /bin/zsh · Conda 23.x · Python 3.10.x · FastQC 0.12.x · HISAT2 2.2.x · Samtools 1.17 · fasterq-dump 3.x
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-nav">
+    <button class="btn btn-primary" onclick="markDone('nav-syscheck'); goTo('page-config', document.getElementById('nav-config'))">✅ System is clean — configure my project →</button>
+  </div>
+</div>
+

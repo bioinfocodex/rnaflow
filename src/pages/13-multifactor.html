@@ -1,0 +1,189 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 11: MULTI-FACTOR DESIGN                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-multifactor">
+  <div class="page-header">
+    <h1>11 — Multi-factor Design <span class="tag tag-orange" style="font-size:0.5em;vertical-align:middle;">Run in RStudio</span></h1>
+    <p>Handle experiments with more than one variable — e.g. condition + batch, condition + sex, or time-course designs. Required when your samples were processed in different batches or have additional metadata.</p>
+  </div>
+
+  <!-- WHEN TO USE -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🤔</span> When do you need this?</div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div style="background:rgba(248,81,73,0.07);border:1px solid rgba(248,81,73,0.2);border-radius:var(--radius);padding:14px;">
+          <div style="font-weight:700;color:var(--red);margin-bottom:6px;font-size:0.88em;">❌ Single-factor (basic)</div>
+          <div style="font-size:0.8em;color:var(--text2);line-height:1.55;">All samples processed identically. Only one variable differs. Use the standard DESeq2 page.</div>
+        </div>
+        <div style="background:rgba(63,185,80,0.07);border:1px solid rgba(63,185,80,0.2);border-radius:var(--radius);padding:14px;">
+          <div style="font-weight:700;color:var(--green);margin-bottom:6px;font-size:0.88em;">✅ Two-factor additive</div>
+          <div style="font-size:0.8em;color:var(--text2);line-height:1.55;">Samples have a known confound (e.g. sequencing batch, sex, age). Add the second factor to the design to control for it.</div>
+        </div>
+        <div style="background:rgba(188,140,255,0.07);border:1px solid rgba(188,140,255,0.2);border-radius:var(--radius);padding:14px;">
+          <div style="font-weight:700;color:var(--purple);margin-bottom:6px;font-size:0.88em;">🔬 Interaction model</div>
+          <div style="font-size:0.8em;color:var(--text2);line-height:1.55;">You want to find genes where the treatment effect <em>differs</em> between groups (e.g. drug works differently in males vs females).</div>
+        </div>
+      </div>
+      <div class="alert warning"><span class="alert-icon">⚠️</span> Multi-factor designs require more replicates. For a 2-factor additive model, aim for ≥ 3 replicates per condition per batch level.</div>
+    </div>
+  </div>
+
+  <!-- STEP 1: SETUP METADATA -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📋</span> Step 1 — Set up your multi-factor sample metadata</div>
+    <div class="card-body">
+      <p>Extend the <code>sample_info</code> data frame from the standard DESeq2 step to include your second factor. Edit the values to match your actual experiment.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — paste into RStudio, edit to match your experiment</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cf">library</span>(DESeq2); <span class="cf">library</span>(ggplot2); <span class="cf">library</span>(ggrepel)
+
+<span class="cc"># ─── Update these paths and names to match your project ───</span>
+base_path  &lt;- <span class="cs">"<span id="mf-base">~/Desktop/RNA-Seq_yeast</span>"</span>   <span class="cc"># your project folder</span>
+ctrl_name  &lt;- <span class="cs">"<span id="mf-ctrl">wildtype</span>"</span>                   <span class="cc"># control condition label</span>
+treat_name &lt;- <span class="cs">"<span id="mf-treat">snf2_mutant</span>"</span>                <span class="cc"># treatment condition label</span>
+n_ctrl     &lt;- <span class="cn"><span id="mf-nctrl">3</span></span>                           <span class="cc"># number of control replicates</span>
+n_treat    &lt;- <span class="cn"><span id="mf-ntreat">3</span></span>                           <span class="cc"># number of treatment replicates</span>
+n_total    &lt;- n_ctrl + n_treat
+
+<span class="cc"># Load count matrix</span>
+counts_raw &lt;- <span class="cf">read.table</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/counts/gene_counts_all.txt"</span>),
+                          header=<span class="cn">TRUE</span>, skip=<span class="cn">1</span>, row.names=<span class="cn">1</span>)
+counts &lt;- counts_raw[, (ncol(counts_raw)-n_total+<span class="cn">1</span>):ncol(counts_raw)]
+
+<span class="cc"># Column names: edit to match your sample order</span>
+colnames(counts) &lt;- c(<span class="cs">"ctrl_1"</span>,<span class="cs">"ctrl_2"</span>,<span class="cs">"ctrl_3"</span>,<span class="cs">"treat_1"</span>,<span class="cs">"treat_2"</span>,<span class="cs">"treat_3"</span>)
+
+<span class="cc"># ─── Define multi-factor metadata ───────────────────────────────
+# EDIT batch/sex/time values to match your actual sample assignments</span>
+sample_info &lt;- <span class="cf">data.frame</span>(
+  condition = <span class="cf">factor</span>(<span class="cf">c</span>(ctrl_name,ctrl_name,ctrl_name, treat_name,treat_name,treat_name)),
+  batch     = <span class="cf">factor</span>(<span class="cf">c</span>(<span class="cs">"batch1"</span>,<span class="cs">"batch1"</span>,<span class="cs">"batch2"</span>, <span class="cs">"batch1"</span>,<span class="cs">"batch2"</span>,<span class="cs">"batch2"</span>)),
+  <span class="cc"># Optionally add more factors:</span>
+  <span class="cc"># sex  = factor(c("M","F","M", "F","M","F")),</span>
+  row.names = <span class="cf">colnames</span>(counts)
+)
+<span class="cf">print</span>(sample_info)  <span class="cc"># verify it looks correct</span></pre></div>
+    </div>
+  </div>
+
+  <!-- MODEL 1: ADDITIVE -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(63,185,80,0.07);"><span class="card-icon">➕</span> Model 1 — Additive: test condition while controlling for batch</div>
+    <div class="card-body">
+      <p>The most common multi-factor model. Adds batch to the design formula so DESeq2 accounts for it when estimating the condition effect. Use this when you have a known confound (batch, sex, age, etc.).</p>
+      <div class="alert info"><span class="alert-icon">💡</span> Design <code>~batch + condition</code> means: "find genes that differ by condition, after accounting for batch variation."</div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — additive two-factor model</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Additive design: controls for batch, tests condition effect</span>
+dds_add &lt;- <span class="cf">DESeqDataSetFromMatrix</span>(countData=counts, colData=sample_info,
+                                   design=<span class="cs">~batch + condition</span>)
+dds_add &lt;- dds_add[rowSums(<span class="cf">counts</span>(dds_add)) &gt;= <span class="cn">10</span>, ]
+dds_add &lt;- <span class="cf">DESeq</span>(dds_add)
+
+<span class="cc"># Extract condition effect (batch effect is now controlled)</span>
+res_add &lt;- <span class="cf">results</span>(dds_add,
+                    contrast=<span class="cf">c</span>(<span class="cs">"condition"</span>, treat_name, ctrl_name),
+                    alpha=<span class="cn">0.05</span>)
+<span class="cf">summary</span>(res_add)
+
+<span class="cc"># Save results</span>
+res_add_df &lt;- <span class="cf">as.data.frame</span>(res_add)
+res_add_df$gene &lt;- <span class="cf">rownames</span>(res_add_df)
+res_add_df &lt;- res_add_df[<span class="cf">order</span>(res_add_df$padj, na.last=<span class="cn">TRUE</span>), ]
+<span class="cf">write.csv</span>(res_add_df, <span class="cf">paste0</span>(base_path, <span class="cs">"/results/deseq2_additive_model.csv"</span>), row.names=<span class="cn">FALSE</span>)
+
+<span class="cf">cat</span>(<span class="cs">"\nAdditive model results:\n"</span>)
+<span class="cf">cat</span>(<span class="cs">"  Significant (padj&lt;0.05):"</span>, <span class="cf">sum</span>(res_add_df$padj &lt; <span class="cn">0.05</span>, na.rm=<span class="cn">TRUE</span>), <span class="cs">"\n"</span>)
+<span class="cf">cat</span>(<span class="cs">"  Up in treatment:         "</span>, <span class="cf">sum</span>(res_add_df$padj &lt; <span class="cn">0.05</span> &amp; res_add_df$log2FoldChange &gt; <span class="cn">0</span>, na.rm=<span class="cn">TRUE</span>), <span class="cs">"\n"</span>)
+<span class="cf">cat</span>(<span class="cs">"  Down in treatment:       "</span>, <span class="cf">sum</span>(res_add_df$padj &lt; <span class="cn">0.05</span> &amp; res_add_df$log2FoldChange &lt; <span class="cn">0</span>, na.rm=<span class="cn">TRUE</span>), <span class="cs">"\n"</span>)</pre></div>
+      <table class="ref-table" style="margin-top:10px;">
+        <tr><th>Compare to basic DESeq2</th><th>What changes</th></tr>
+        <tr><td>Design formula</td><td><code>~condition</code> → <code>~batch + condition</code></td></tr>
+        <tr><td>Fold changes</td><td>Adjusted for batch effect — more accurate</td></tr>
+        <tr><td>Gene count</td><td>Usually <strong>more</strong> significant genes (reduced noise)</td></tr>
+        <tr><td>Interpretation</td><td>Same — padj &lt; 0.05, LFC direction still applies</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODEL 2: INTERACTION -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(188,140,255,0.07);"><span class="card-icon">✖️</span> Model 2 — Interaction: genes where treatment effect differs by group</div>
+    <div class="card-body">
+      <p>Use when you want to find genes where the effect of treatment is <strong>different</strong> depending on another variable (e.g. a drug that works in females but not males). This is more complex — only use if scientifically justified.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — interaction model</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Interaction model: tests if treatment effect DIFFERS by batch</span>
+dds_int &lt;- <span class="cf">DESeqDataSetFromMatrix</span>(countData=counts, colData=sample_info,
+                                   design=<span class="cs">~batch * condition</span>)
+dds_int &lt;- dds_int[rowSums(<span class="cf">counts</span>(dds_int)) &gt;= <span class="cn">10</span>, ]
+dds_int &lt;- <span class="cf">DESeq</span>(dds_int)
+
+<span class="cc"># List all available result names (choose the interaction term)</span>
+<span class="cf">resultsNames</span>(dds_int)
+<span class="cc"># Look for a name like: "batchbatch2.conditiontreat_name"</span>
+
+<span class="cc"># Extract the interaction term (genes where batch modifies treatment effect)</span>
+interaction_term &lt;- <span class="cf">grep</span>(<span class="cs">"batch.*condition"</span>, <span class="cf">resultsNames</span>(dds_int), value=<span class="cn">TRUE</span>)[<span class="cn">1</span>]
+res_int &lt;- <span class="cf">results</span>(dds_int, name=interaction_term, alpha=<span class="cn">0.05</span>)
+<span class="cf">summary</span>(res_int)
+
+res_int_df &lt;- <span class="cf">as.data.frame</span>(res_int)
+res_int_df$gene &lt;- <span class="cf">rownames</span>(res_int_df)
+<span class="cf">write.csv</span>(res_int_df, <span class="cf">paste0</span>(base_path, <span class="cs">"/results/deseq2_interaction.csv"</span>), row.names=<span class="cn">FALSE</span>)
+<span class="cf">cat</span>(<span class="cs">"Genes with significant interaction:"</span>, <span class="cf">sum</span>(res_int_df$padj &lt; <span class="cn">0.05</span>, na.rm=<span class="cn">TRUE</span>), <span class="cs">"\n"</span>)</pre></div>
+    </div>
+  </div>
+
+  <!-- MODEL 3: LRT -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(88,166,255,0.07);"><span class="card-icon">📐</span> Model 3 — Likelihood Ratio Test (LRT): overall effect of condition</div>
+    <div class="card-body">
+      <p>LRT identifies genes that change <em>anywhere</em> across your conditions — useful for time courses or experiments with 3+ condition levels. It compares a full model to a reduced model without condition.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — LRT (best for time-course and 3+ conditions)</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># LRT: finds genes where REMOVING condition significantly worsens the model fit</span>
+dds_lrt &lt;- <span class="cf">DESeqDataSetFromMatrix</span>(countData=counts, colData=sample_info,
+                                   design=<span class="cs">~batch + condition</span>)
+dds_lrt &lt;- dds_lrt[rowSums(<span class="cf">counts</span>(dds_lrt)) &gt;= <span class="cn">10</span>, ]
+dds_lrt &lt;- <span class="cf">DESeq</span>(dds_lrt, test=<span class="cs">"LRT"</span>, reduced=<span class="cs">~batch</span>)  <span class="cc"># reduced removes condition</span>
+
+res_lrt &lt;- <span class="cf">results</span>(dds_lrt, alpha=<span class="cn">0.05</span>)
+<span class="cf">summary</span>(res_lrt)
+
+res_lrt_df &lt;- <span class="cf">as.data.frame</span>(res_lrt)
+res_lrt_df$gene &lt;- <span class="cf">rownames</span>(res_lrt_df)
+res_lrt_df &lt;- res_lrt_df[<span class="cf">order</span>(res_lrt_df$padj, na.last=<span class="cn">TRUE</span>), ]
+<span class="cf">write.csv</span>(res_lrt_df, <span class="cf">paste0</span>(base_path, <span class="cs">"/results/deseq2_LRT.csv"</span>), row.names=<span class="cn">FALSE</span>)
+<span class="cf">cat</span>(<span class="cs">"Genes significant by LRT (padj&lt;0.05):"</span>, <span class="cf">sum</span>(res_lrt_df$padj &lt; <span class="cn">0.05</span>, na.rm=<span class="cn">TRUE</span>), <span class="cs">"\n"</span>)</pre></div>
+      <div class="alert info" style="margin-top:10px;"><span class="alert-icon">ℹ️</span> LRT p-values test whether the gene responds to condition <em>at all</em>. LFC values are still reported but are pairwise comparisons — use <code>results(dds_lrt, contrast=...)</code> to get specific pairwise LFCs for significant LRT genes.</div>
+    </div>
+  </div>
+
+  <!-- PAIRED DESIGN -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🔗</span> Paired design — matched samples (patient before/after, twin studies)</div>
+    <div class="card-body">
+      <p>If each control sample is paired with a treatment sample from the same biological source (e.g. same patient pre/post treatment), use the paired design. This is the most powerful approach for paired data.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — paired design</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># Paired design: each control is matched to a treatment from the same source</span>
+sample_info_paired &lt;- <span class="cf">data.frame</span>(
+  condition = <span class="cf">factor</span>(<span class="cf">c</span>(ctrl_name,ctrl_name,ctrl_name, treat_name,treat_name,treat_name)),
+  patient   = <span class="cf">factor</span>(<span class="cf">c</span>(<span class="cs">"P1"</span>,<span class="cs">"P2"</span>,<span class="cs">"P3"</span>, <span class="cs">"P1"</span>,<span class="cs">"P2"</span>,<span class="cs">"P3"</span>)),  <span class="cc"># same patient IDs</span>
+  row.names = <span class="cf">colnames</span>(counts)
+)
+
+<span class="cc"># Patient goes first — this blocks for individual variation</span>
+dds_paired &lt;- <span class="cf">DESeqDataSetFromMatrix</span>(countData=counts, colData=sample_info_paired,
+                                      design=<span class="cs">~patient + condition</span>)
+dds_paired &lt;- dds_paired[rowSums(<span class="cf">counts</span>(dds_paired)) &gt;= <span class="cn">10</span>, ]
+dds_paired &lt;- <span class="cf">DESeq</span>(dds_paired)
+res_paired &lt;- <span class="cf">results</span>(dds_paired, contrast=<span class="cf">c</span>(<span class="cs">"condition"</span>, treat_name, ctrl_name), alpha=<span class="cn">0.05</span>)
+<span class="cf">summary</span>(res_paired)
+<span class="cf">cat</span>(<span class="cs">"Significant (paired, padj&lt;0.05):"</span>, <span class="cf">sum</span>(res_paired$padj &lt; <span class="cn">0.05</span>, na.rm=<span class="cn">TRUE</span>), <span class="cs">"\n"</span>)</pre></div>
+    </div>
+  </div>
+
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-multifactor'); goTo('page-batch', document.getElementById('nav-batch'))">Mark done &amp; next → Batch correction</button>
+  </div>
+</div>
+
+
