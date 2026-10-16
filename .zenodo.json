@@ -1,0 +1,37 @@
+{
+  "title": "RNAflow: a guided desktop application for reproducible bulk RNA-seq analysis",
+  "upload_type": "software",
+  "description": "<p>RNAflow is a desktop application that guides a researcher through a complete RNA-seq analysis on their own computer, from raw FASTQ files to differential expression and pathway enrichment. It also analyses small RNA (miRNA) libraries and can start from an existing count table. Every step generates the exact commands for the project and runs them with one click; every tool and R package is installed at a fixed version, and each run records the software behind its results.</p><p>The repository includes end-to-end benchmarks on the airway study (GSE52778) and on synthetic small RNA pools with designed fold changes (GSE94585).</p>",
+  "creators": [
+    {
+      "name": "Bhattarai, Matrika",
+      "orcid": "0000-0003-2627-6251",
+      "affiliation": "Independent researcher, BioInfoCodex"
+    }
+  ],
+  "access_right": "open",
+  "license": "mit",
+  "language": "eng",
+  "keywords": [
+    "RNA-seq",
+    "transcriptomics",
+    "differential expression",
+    "small RNA",
+    "miRNA",
+    "reproducibility",
+    "DESeq2",
+    "bioinformatics"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/bioinfocodex/rnaflow",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://rnaflow.bioinfocodex.com",
+      "relation": "isDocumentedBy",
+      "resource_type": "other"
+    }
+  ]
+}
