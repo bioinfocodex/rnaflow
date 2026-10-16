@@ -1,0 +1,104 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE: RESULTS & EXPORT                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-results">
+  <div class="page-header">
+    <h1>📂 Results &amp; Export <span class="tag tag-green" style="font-size:0.5em;vertical-align:middle;">New in v3</span></h1>
+    <p>Look at what the pipeline produced without leaving RNAflow, and export the whole project as a reproducible workflow.</p>
+  </div>
+
+  <!-- INTERACTIVE EXPLORER (v3.2) -->
+  <div class="card" id="rx-card">
+    <div class="card-head"><span class="card-icon">🔎</span> Explore results
+      <button class="btn btn-ghost" style="margin-left:auto;font-size:0.78em;padding:4px 12px;" onclick="rxLoad()">↻ Load</button>
+    </div>
+    <div class="card-body">
+      <div id="rx-status" style="font-size:0.83em;color:var(--text3);line-height:1.6;">Run the DESeq2 step, then press Load. Reads <code>results/deseq2_results.csv</code> through the local server.</div>
+      <div id="rx-main" style="display:none;">
+        <div class="rx-controls">
+          <label>padj &lt; <select id="rx-padj" onchange="rxRender()"><option>0.01</option><option selected>0.05</option><option>0.1</option></select></label>
+          <label>|log2FC| &gt; <select id="rx-lfc" onchange="rxRender()"><option>0</option><option>0.5</option><option selected>1</option><option>2</option></select></label>
+          <label title="apeglm-shrunken fold changes keep noisy low-count genes from the edges"><input type="checkbox" id="rx-shrunk" checked onchange="rxRender()"> shrunken fold changes</label>
+          <input type="search" id="rx-search" placeholder="Find a gene — name or ID" oninput="rxSearch(this.value)" autocomplete="off">
+        </div>
+        <div id="rx-summary" class="rx-summary"></div>
+        <div class="rx-grid">
+          <div class="rx-plot-wrap">
+            <canvas id="rx-volcano" height="380" aria-label="Volcano plot: log2 fold change against -log10 adjusted p-value. Hover a point for the gene; click to see its counts."></canvas>
+            <div id="rx-tip" class="rx-tip" role="status"></div>
+          </div>
+          <div id="rx-gene" class="rx-gene"><div style="color:var(--text3);font-size:0.85em;">Click a point, a table row or search to see a gene's counts in every sample.</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin:14px 0 6px;">
+          <h3 style="margin:0;">Significant genes</h3>
+          <span id="rx-count" style="font-size:0.8em;color:var(--text3);"></span>
+          <button class="btn btn-ghost" style="margin-left:auto;font-size:0.78em;padding:4px 12px;" onclick="rxDownload()">⬇ Download these genes (CSV)</button>
+        </div>
+        <div class="rx-table-wrap"><table class="ref-table rx-table" id="rx-table"></table></div>
+        <div id="rx-enrich" style="margin-top:18px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEWER -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🖼️</span> Output browser
+      <button class="btn btn-ghost" style="margin-left:auto;font-size:0.78em;padding:4px 12px;" onclick="refreshResults()">↻ Refresh</button>
+    </div>
+    <div class="card-body">
+      <div id="res-status" style="font-size:0.83em;color:var(--text3);line-height:1.6;"></div>
+      <div id="res-folders" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;"></div>
+      <div id="res-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;"></div>
+    </div>
+  </div>
+
+  <!-- NF-CORE EXPORT -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🔬</span> Export to nf-core/rnaseq</div>
+    <div class="card-body">
+      <p style="font-size:0.85em;color:var(--text2);line-height:1.65;margin-bottom:12px;">
+        RNAflow teaches the pipeline one step at a time, which is the right way to learn it and the wrong way to run
+        it fifty times. <strong>nf-core/rnaseq</strong> is the community-standard Nextflow workflow — it resumes after
+        failures, parallelises across samples, and records software versions for your methods section. These two files
+        hand your exact configuration over to it.
+      </p>
+      <div class="alert info" style="margin-bottom:12px;">
+        <span class="alert-icon">💡</span>
+        <div>Install once with <code>conda install -c bioconda nextflow</code>, then run the command below. Nextflow
+        pulls the workflow and containers itself — nothing else to set up.</div>
+      </div>
+
+      <h3>1 — Samplesheet</h3>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">samplesheet.csv</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button><button class="btn btn-ghost" style="font-size:0.72em;padding:3px 10px;margin-left:6px;" onclick="downloadSamplesheet()">⬇ Download</button></div><pre class="code" id="nf-samplesheet">...</pre></div>
+      <div id="nf-sheet-note" style="font-size:0.77em;color:var(--text3);margin-top:6px;"></div>
+
+      <h3 style="margin-top:16px;">2 — Write the samplesheet and launch</h3>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="nf-command">...</pre></div>
+    </div>
+  </div>
+
+  <!-- SHELL SCRIPT BUNDLE -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📜</span> Export as one shell script</div>
+    <div class="card-body">
+      <p style="font-size:0.85em;color:var(--text2);line-height:1.65;margin-bottom:12px;">
+        Prefer to stay with the tools you have just learned? This bundles every generated step, in order, into a single
+        script you can run unattended or attach to a paper as the exact commands used.
+      </p>
+      <button class="btn" onclick="downloadRunAll()" style="background:var(--green);color:#04120a;border:none;font-weight:700;">⬇ Download run_all.sh</button>
+      <span id="runall-note" style="font-size:0.78em;color:var(--text3);margin-left:10px;"></span>
+    </div>
+  </div>
+</div>
+
+
+</div><!-- end main -->
+</div><!-- end app-body -->
+
+<!-- AUTO-ADVANCE TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon">✅</span>
+  <span id="toast-msg">Step complete!</span>
+  <button class="toast-next-btn" id="toast-next-btn" onclick="toastNext()">Next step →</button>
+</div>
+

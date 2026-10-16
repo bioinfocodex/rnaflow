@@ -1,0 +1,196 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 12: BATCH CORRECTION                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-batch">
+  <div class="page-header">
+    <h1>12 — Batch Correction <span class="tag tag-orange" style="font-size:0.5em;vertical-align:middle;">Run in RStudio</span></h1>
+    <p>Remove technical variation introduced by processing samples on different days, machines, or by different operators. Batch effects can mask real biology — or create false signals if ignored.</p>
+  </div>
+
+  <!-- DETECT BATCH EFFECTS FIRST -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🔍</span> Step 1 — Detect batch effects with PCA</div>
+    <div class="card-body">
+      <p>Always check for batch effects <em>before</em> correcting. If replicates from the same condition cluster by batch instead of by condition on PCA, you have a batch effect.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — PCA colored by both condition AND batch</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cf">library</span>(DESeq2); <span class="cf">library</span>(ggplot2); <span class="cf">library</span>(ggrepel)
+
+<span class="cc"># Run this AFTER loading counts and sample_info from the DESeq2 step
+# (sample_info must have both 'condition' and 'batch' columns)</span>
+base_path &lt;- <span class="cs">"<span id="bc-base">~/Desktop/RNA-Seq_yeast</span>"</span>
+
+dds_raw &lt;- <span class="cf">DESeqDataSetFromMatrix</span>(countData=counts, colData=sample_info, design=<span class="cs">~condition</span>)
+dds_raw &lt;- dds_raw[rowSums(<span class="cf">counts</span>(dds_raw)) &gt;= <span class="cn">10</span>, ]
+dds_raw &lt;- <span class="cf">estimateSizeFactors</span>(dds_raw)
+vst_raw  &lt;- <span class="cf">vst</span>(dds_raw, blind=<span class="cn">TRUE</span>)
+
+<span class="cc"># PCA: color by condition, shape by batch — batch effect = shapes separate</span>
+pca_data &lt;- <span class="cf">plotPCA</span>(vst_raw, intgroup=<span class="cf">c</span>(<span class="cs">"condition"</span>,<span class="cs">"batch"</span>), returnData=<span class="cn">TRUE</span>)
+pct_var  &lt;- <span class="cf">round</span>(<span class="cn">100</span> * <span class="cf">attr</span>(pca_data, <span class="cs">"percentVar"</span>))
+
+p_check &lt;- <span class="cf">ggplot</span>(pca_data, <span class="cf">aes</span>(PC1, PC2, color=condition, shape=batch, label=name)) +
+  <span class="cf">geom_point</span>(size=<span class="cn">4</span>) +
+  <span class="cf">geom_text_repel</span>(size=<span class="cn">3.5</span>, show.legend=<span class="cn">FALSE</span>) +
+  <span class="cf">labs</span>(title=<span class="cs">"PCA: check for batch effects"</span>,
+       subtitle=<span class="cs">"If shapes separate on PC1/PC2 — batch effect present"</span>,
+       x=<span class="cf">paste0</span>(<span class="cs">"PC1: "</span>, pct_var[<span class="cn">1</span>], <span class="cs">"% variance"</span>),
+       y=<span class="cf">paste0</span>(<span class="cs">"PC2: "</span>, pct_var[<span class="cn">2</span>], <span class="cs">"% variance"</span>)) +
+  <span class="cf">theme_minimal</span>(base_size=<span class="cn">13</span>)
+<span class="cf">print</span>(p_check)
+<span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/pca_batch_check.png"</span>), p_check, width=<span class="cn">9</span>, height=<span class="cn">7</span>, dpi=<span class="cn">300</span>)</pre></div>
+      <table class="ref-table" style="margin-top:10px;">
+        <tr><th>PCA pattern</th><th>Interpretation</th><th>Action</th></tr>
+        <tr><td>Conditions separate on PC1, batches overlap</td><td>✅ No batch effect</td><td>Use standard DESeq2</td></tr>
+        <tr><td>Batches separate on PC1 or PC2</td><td>⚠️ Batch effect present</td><td>Use ComBat-seq or additive model</td></tr>
+        <tr><td>Random — no clear pattern</td><td>ℹ️ Low quality / high noise</td><td>Check FastQC reports, consider removing outliers</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- COMBATSEQ -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(63,185,80,0.07);"><span class="card-icon">⚔️</span> Step 2A — ComBat-seq: correct raw counts (recommended)</div>
+    <div class="card-body">
+      <p>ComBat-seq corrects for batch effects directly on raw count data while preserving the count distribution needed by DESeq2. This is the <strong>recommended approach</strong> for RNA-seq count data.</p>
+      <div class="alert success"><span class="alert-icon">✅</span> <strong>ComBat-seq vs multi-factor model:</strong> ComBat-seq physically removes batch variation from counts. The multi-factor model (Step 11) statistically accounts for it. Both are valid — ComBat-seq is preferred when sharing data or running downstream tools that don't accept multi-factor designs.</div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — ComBat-seq batch correction on raw counts</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># sva is included in the rnaseq environment</span>
+<span class="cf">library</span>(sva); <span class="cf">library</span>(DESeq2); <span class="cf">library</span>(ggplot2); <span class="cf">library</span>(ggrepel)
+
+<span class="cc"># batch and group vectors must be in the same order as your count columns
+# 1 = batch1, 2 = batch2  |  1 = control, 2 = treatment</span>
+batch_vec &lt;- <span class="cf">as.integer</span>(sample_info$batch)   <span class="cc"># e.g. c(1,1,2, 1,2,2)</span>
+group_vec &lt;- <span class="cf">as.integer</span>(sample_info$condition) <span class="cc"># e.g. c(1,1,1, 2,2,2)</span>
+
+<span class="cc"># Apply ComBat-seq: corrects raw counts, preserves count nature</span>
+counts_mat       &lt;- <span class="cf">as.matrix</span>(counts)
+counts_corrected &lt;- <span class="cf">ComBat_seq</span>(counts_mat, batch=batch_vec, group=group_vec)
+
+<span class="cf">cat</span>(<span class="cs">"ComBat-seq done. Matrix dimensions:"</span>, <span class="cf">dim</span>(counts_corrected), <span class="cs">"\n"</span>)
+
+<span class="cc"># Save corrected count matrix</span>
+<span class="cf">write.csv</span>(<span class="cf">as.data.frame</span>(counts_corrected),
+          <span class="cf">paste0</span>(base_path, <span class="cs">"/counts/gene_counts_batch_corrected.csv"</span>))
+
+<span class="cc"># Re-run DESeq2 with corrected counts — simple design, no batch term needed</span>
+sample_info_simple &lt;- <span class="cf">data.frame</span>(
+  condition = sample_info$condition,
+  row.names = <span class="cf">colnames</span>(counts_corrected)
+)
+dds_bc &lt;- <span class="cf">DESeqDataSetFromMatrix</span>(countData=counts_corrected, colData=sample_info_simple,
+                                  design=<span class="cs">~condition</span>)
+dds_bc &lt;- dds_bc[rowSums(<span class="cf">counts</span>(dds_bc)) &gt;= <span class="cn">10</span>, ]
+dds_bc &lt;- <span class="cf">DESeq</span>(dds_bc)
+res_bc &lt;- <span class="cf">results</span>(dds_bc, contrast=<span class="cf">c</span>(<span class="cs">"condition"</span>, treat_name, ctrl_name), alpha=<span class="cn">0.05</span>)
+<span class="cf">summary</span>(res_bc)
+res_bc_df &lt;- <span class="cf">as.data.frame</span>(res_bc); res_bc_df$gene &lt;- <span class="cf">rownames</span>(res_bc_df)
+<span class="cf">write.csv</span>(res_bc_df, <span class="cf">paste0</span>(base_path, <span class="cs">"/results/deseq2_combatseq_corrected.csv"</span>), row.names=<span class="cn">FALSE</span>)
+<span class="cf">cat</span>(<span class="cs">"Significant after ComBat-seq:"</span>, <span class="cf">sum</span>(res_bc_df$padj &lt; <span class="cn">0.05</span>, na.rm=<span class="cn">TRUE</span>), <span class="cs">"\n"</span>)</pre></div>
+    </div>
+  </div>
+
+  <!-- LIMMA -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(88,166,255,0.07);"><span class="card-icon">📊</span> Step 2B — limma::removeBatchEffect (for visualization only)</div>
+    <div class="card-body">
+      <p>Use <code>removeBatchEffect</code> on VST-normalized data for making PCA plots and heatmaps. <strong>Do not use</strong> the output as DESeq2 input — it is not count data.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — limma batch removal for plots</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># limma is included in the rnaseq environment</span>
+<span class="cf">library</span>(limma); <span class="cf">library</span>(DESeq2)
+
+<span class="cc"># Get VST-normalized data from your DESeq2 object</span>
+vst_data &lt;- <span class="cf">vst</span>(dds_bc, blind=<span class="cn">FALSE</span>)
+mat       &lt;- <span class="cf">assay</span>(vst_data)
+
+<span class="cc"># Remove batch effect from the VST matrix (visualization only)</span>
+mat_corrected &lt;- <span class="cf">removeBatchEffect</span>(mat, batch=batch_vec)
+
+<span class="cc"># Replace the assay data with corrected values for plotting</span>
+<span class="cf">assay</span>(vst_data) &lt;- mat_corrected
+
+<span class="cc"># PCA after batch removal</span>
+pca_after &lt;- <span class="cf">plotPCA</span>(vst_data, intgroup=<span class="cs">"condition"</span>) +
+  <span class="cf">ggtitle</span>(<span class="cs">"PCA AFTER limma batch removal"</span>) +
+  <span class="cf">theme_minimal</span>(base_size=<span class="cn">13</span>)
+<span class="cf">print</span>(pca_after)
+<span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/pca_after_batch_removal.png"</span>), pca_after, width=<span class="cn">8</span>, height=<span class="cn">6</span>, dpi=<span class="cn">300</span>)
+<span class="cf">cat</span>(<span class="cs">"PCA plot saved! Use the corrected matrix for heatmaps and other visualizations.\n"</span>)</pre></div>
+    </div>
+  </div>
+
+  <!-- SVA -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(240,136,62,0.07);"><span class="card-icon">🔬</span> Step 2C — SVA: when batch is unknown</div>
+    <div class="card-body">
+      <p>Surrogate Variable Analysis (SVA) detects hidden batch-like sources of variation in your data — even when you don't know what they are. Use this when you can't identify specific batch variables.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — SVA surrogate variable analysis</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cf">library</span>(sva); <span class="cf">library</span>(DESeq2)
+
+<span class="cc"># Normalize raw counts for SVA input</span>
+dds_sva &lt;- <span class="cf">DESeqDataSetFromMatrix</span>(countData=counts, colData=sample_info, design=<span class="cs">~condition</span>)
+dds_sva &lt;- dds_sva[rowSums(<span class="cf">counts</span>(dds_sva)) &gt;= <span class="cn">10</span>, ]
+dds_sva &lt;- <span class="cf">estimateSizeFactors</span>(dds_sva)
+log_norm &lt;- <span class="cf">log2</span>(<span class="cf">counts</span>(dds_sva, normalized=<span class="cn">TRUE</span>) + <span class="cn">1</span>)
+
+<span class="cc"># Define full model (includes condition) and null model (no condition)</span>
+mod_full &lt;- <span class="cf">model.matrix</span>(<span class="cs">~condition</span>, data=<span class="cf">colData</span>(dds_sva))
+mod_null &lt;- <span class="cf">model.matrix</span>(<span class="cs">~1</span>,          data=<span class="cf">colData</span>(dds_sva))
+
+<span class="cc"># Estimate number of surrogate variables</span>
+n_sv &lt;- <span class="cf">num.sv</span>(log_norm, mod_full, method=<span class="cs">"leek"</span>)
+<span class="cf">cat</span>(<span class="cs">"Estimated surrogate variables:"</span>, n_sv, <span class="cs">"\n"</span>)
+
+svobj &lt;- <span class="cf">sva</span>(log_norm, mod_full, mod_null, n.sv=n_sv)
+
+<span class="cc"># Add surrogate variables to DESeq2 metadata</span>
+<span class="cf">for</span> (i in <span class="cn">1</span>:n_sv) {
+  <span class="cf">colData</span>(dds_sva)[[<span class="cf">paste0</span>(<span class="cs">"SV"</span>, i)]] &lt;- svobj$sv[, i]
+}
+sv_terms    &lt;- <span class="cf">paste</span>(<span class="cf">paste0</span>(<span class="cs">"SV"</span>, <span class="cn">1</span>:n_sv), collapse=<span class="cs">" + "</span>)
+design_sva  &lt;- <span class="cf">as.formula</span>(<span class="cf">paste</span>(<span class="cs">"~"</span>, sv_terms, <span class="cs">"+ condition"</span>))
+<span class="cf">design</span>(dds_sva) &lt;- design_sva
+dds_sva &lt;- <span class="cf">DESeq</span>(dds_sva)
+res_sva &lt;- <span class="cf">results</span>(dds_sva, contrast=<span class="cf">c</span>(<span class="cs">"condition"</span>, treat_name, ctrl_name), alpha=<span class="cn">0.05</span>)
+<span class="cf">summary</span>(res_sva)
+<span class="cf">cat</span>(<span class="cs">"Significant after SVA correction:"</span>, <span class="cf">sum</span>(res_sva$padj &lt; <span class="cn">0.05</span>, na.rm=<span class="cn">TRUE</span>), <span class="cs">"\n"</span>)</pre></div>
+    </div>
+  </div>
+
+  <!-- BEFORE / AFTER COMPARISON -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🖼️</span> Step 3 — Compare PCA before vs after batch correction</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — side-by-side PCA comparison</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+<pre class="code"><span class="cc"># patchwork is included in the rnaseq environment</span>
+<span class="cf">library</span>(patchwork)
+
+<span class="cc"># Before: VST from uncorrected counts</span>
+dds_before &lt;- <span class="cf">DESeqDataSetFromMatrix</span>(countData=counts, colData=sample_info, design=<span class="cs">~condition</span>)
+dds_before &lt;- dds_before[rowSums(<span class="cf">counts</span>(dds_before)) &gt;= <span class="cn">10</span>, ]
+dds_before &lt;- <span class="cf">estimateSizeFactors</span>(dds_before)
+vst_before &lt;- <span class="cf">vst</span>(dds_before, blind=<span class="cn">TRUE</span>)
+
+<span class="cc"># After: VST from ComBat-seq corrected counts</span>
+dds_after &lt;- <span class="cf">DESeqDataSetFromMatrix</span>(countData=counts_corrected, colData=sample_info_simple, design=<span class="cs">~condition</span>)
+dds_after &lt;- dds_after[rowSums(<span class="cf">counts</span>(dds_after)) &gt;= <span class="cn">10</span>, ]
+dds_after &lt;- <span class="cf">estimateSizeFactors</span>(dds_after)
+vst_after &lt;- <span class="cf">vst</span>(dds_after, blind=<span class="cn">TRUE</span>)
+
+p_before &lt;- <span class="cf">plotPCA</span>(vst_before, intgroup=<span class="cs">"condition"</span>) +
+  <span class="cf">ggtitle</span>(<span class="cs">"BEFORE batch correction"</span>) + <span class="cf">theme_minimal</span>(base_size=<span class="cn">12</span>)
+p_after  &lt;- <span class="cf">plotPCA</span>(vst_after,  intgroup=<span class="cs">"condition"</span>) +
+  <span class="cf">ggtitle</span>(<span class="cs">"AFTER batch correction"</span>)  + <span class="cf">theme_minimal</span>(base_size=<span class="cn">12</span>)
+
+<span class="cf">ggsave</span>(<span class="cf">paste0</span>(base_path, <span class="cs">"/results/pca_before_after_batch.png"</span>),
+       p_before + p_after, width=<span class="cn">14</span>, height=<span class="cn">6</span>, dpi=<span class="cn">300</span>)
+<span class="cf">cat</span>(<span class="cs">"Before/after PCA comparison saved!\n"</span>)</pre></div>
+      <div class="alert success" style="margin-top:10px;"><span class="alert-icon">✅</span> <strong>Good result:</strong> After correction, samples from the same condition cluster together regardless of batch. The two conditions should be clearly separated on PC1.</div>
+    </div>
+  </div>
+
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-batch'); goTo('page-gsea', document.getElementById('nav-gsea'))">Mark done &amp; next → GSEA &amp; pathways</button>
+  </div>
+</div>
+
+

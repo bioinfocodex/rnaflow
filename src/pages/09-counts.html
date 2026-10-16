@@ -1,0 +1,36 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 7: COUNTS                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-counts">
+  <div class="page-header">
+    <h1>7 — Gene Counting</h1>
+    <p>Count how many reads map to each gene using featureCounts — this creates your expression matrix.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🔢</span> featureCounts — all samples in one command</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-counts">...</pre></div>
+      <div class="alert info"><span class="alert-icon">💡</span> <strong>Expected % assigned:</strong> Yeast 60–70% · Human/Mouse 65–75% · Plants 50–65% — remaining reads fall in intergenic regions, which is normal.</div>
+      <h3>Preview the count table:</h3>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-preview">...</pre></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🩺</span> QC summary — is every sample fit to analyse?</div>
+    <div class="card-body">
+      <p>FastQC only looks at the reads. This checks where they went: how many mapped, how many came from rRNA or mitochondria, and on the genome route how evenly they cover each gene. Everything is gathered into one MultiQC report with a PASS / WARN verdict per sample. Look at it before running DESeq2 — one bad sample can distort every result.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-postqc">...</pre></div>
+      <table class="ref-table" style="margin-top:10px;">
+        <tr><th>Check</th><th>PASS</th><th>If it fails</th></tr>
+        <tr><td>Mapped reads</td><td>≥ 70%</td><td>Wrong reference or read type, or contamination</td></tr>
+        <tr><td>rRNA reads</td><td>&lt; 10%</td><td>rRNA depletion or poly-A selection did not work well</td></tr>
+        <tr><td>Mitochondrial reads</td><td>&lt; 30%</td><td>Stressed or dying cells; common in some tissues</td></tr>
+        <tr><td>Gene-body coverage (genome route)</td><td>Flat across the gene</td><td>Strong 3′ bias means degraded RNA — compare RIN values</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-counts'); goTo('page-genefamily', document.getElementById('nav-genefamily'))">Mark done &amp; next → Gene Family Analysis</button>
+  </div>
+</div>
+

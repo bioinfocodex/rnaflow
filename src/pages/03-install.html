@@ -1,0 +1,33 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 1: INSTALL                                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-install">
+  <div class="page-header">
+    <h1>1 — Install Tools <span class="tag tag-blue" style="font-size:0.5em; vertical-align:middle;">One-time only</span></h1>
+    <p>Run these commands once. Never needs repeating on this Mac.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🍺</span> Homebrew + Miniforge (Conda)</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code"><span class="cc"># 1. Install Homebrew (macOS package manager)</span>
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+<span class="cc"># 2. Install Miniforge (Conda for bioinformatics)</span>
+brew install miniforge
+conda init zsh
+<span class="cc"># ↑ Close and reopen Terminal after this!</span></pre></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📦</span> RNA-seq tools, R and Bioconductor — one pinned environment</div>
+    <div class="card-body">
+      <p>Every tool and R package is installed at a fixed version, so your results can be reproduced exactly on another machine or years from now. R and DESeq2 come from this environment too, so there is no separate R or RStudio install. About 300 MB to download.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-install-env"></pre></div>
+      <div class="alert info"><span class="alert-icon">ℹ️</span><div>Prefer RStudio? Start it from a terminal where <code>conda activate rnaseq</code> has run, so it uses this environment's R and packages rather than a separate install.</div></div>
+    </div>
+  </div>
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-install'); goTo('page-download', document.getElementById('nav-download'))">Mark done &amp; next →</button>
+  </div>
+</div>
+

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RNAflow Local Server  v3.0
+RNAflow Local Server  v3.2
 ===========================
 Works on:  macOS · Linux · Windows (PowerShell / CMD / WSL)
 Requires:  Python 3.6+  (no extra packages needed)
@@ -48,7 +48,7 @@ IS_MAC   = SYSTEM == 'Darwin'
 IS_LINUX = SYSTEM == 'Linux'
 IS_WIN   = SYSTEM == 'Windows'
 
-VERSION   = "3.0"
+VERSION   = "3.2"
 PORT      = int(os.environ.get("RNAFLOW_PORT", 7788))
 HOST      = "127.0.0.1"
 CONDA_ENV = os.environ.get("RNAFLOW_ENV", "rnaseq")
@@ -58,6 +58,9 @@ APP_FILE  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "RNAflow_Ap
 # ── SESSION STATE DIRECTORY ───────────────────────────────────────────────
 STATE_DIR = os.path.join(os.path.expanduser("~"), ".rnaflow")
 LOG_DIR   = os.path.join(STATE_DIR, "logs")
+# The desktop app installs Miniforge here on first launch when the machine
+# has no conda: private to RNAflow, no admin rights, shell config untouched.
+PRIVATE_CONDA = os.path.join(STATE_DIR, "miniforge3")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Token: reuse RNAFLOW_TOKEN when a launcher (e.g. the Electron app) supplies
@@ -98,6 +101,7 @@ def find_conda():
         ]
     else:
         checks = [
+            os.path.join(PRIVATE_CONDA, "bin", "conda"),
             os.path.join(home, "miniforge3",  "bin", "conda"),
             os.path.join(home, "miniconda3",  "bin", "conda"),
             os.path.join(home, "anaconda3",   "bin", "conda"),
@@ -138,11 +142,54 @@ def conda_env_exists():
         return None
 
 
-ENV_PRESENT = None  # resolved lazily on first /status call
+ENV_PRESENT = None  # resolved lazily on /status
+ENV_CHECKED = 0.0   # when it was last resolved
+
+
+def env_present():
+    """Cached, but a missing env is re-checked every 20 s so the app notices
+    as soon as setup (or a terminal install) creates it."""
+    global ENV_PRESENT, ENV_CHECKED
+    if ENV_PRESENT is not True and time.time() - ENV_CHECKED > 20:
+        ENV_PRESENT = conda_env_exists()
+        ENV_CHECKED = time.time()
+    return ENV_PRESENT
+
+
+# ── ONE-CLICK SETUP ───────────────────────────────────────────────────────
+# The app sends the pinned environment it renders on its Install page, so the
+# version list lives in one place. Only that shape is accepted: a token
+# holder can already run commands, but this endpoint should do one thing.
+ENV_FILE = os.path.join(STATE_DIR, "environment.yml")
+_YAML_LINE = __import__("re").compile(
+    r"^(#.*|name: [A-Za-z0-9_-]+|channels:|dependencies:"
+    r"|  - (conda-forge|bioconda)|  - [a-z0-9][a-z0-9._-]*=[A-Za-z0-9._]+)$")
+
+
+def validate_env_yaml(text):
+    lines = [l for l in (text or "").splitlines() if l.strip()]
+    if not lines or len(text) > 20_000:
+        return "empty or too large"
+    bad = [l for l in lines if not _YAML_LINE.match(l)]
+    if bad:
+        return f"unexpected line: {bad[0][:80]}"
+    if f"name: {CONDA_ENV}" not in lines:
+        return f"environment must be named {CONDA_ENV}"
+    return None
+
+
+def setup_command():
+    """Create the env, or bring an existing one exactly in line."""
+    verb = (f'env update -n {CONDA_ENV} -f "{ENV_FILE}" --prune'
+            if conda_env_exists() else f'env create -n {CONDA_ENV} -f "{ENV_FILE}"')
+    return (f'echo "[RNAflow] Installing the pinned tool set — about 300 MB, '
+            f'usually 5–15 minutes."\n'
+            f'"{CONDA_PATH}" {verb} && '
+            f'echo "[RNAflow] Done. Every tool is installed at the version RNAflow expects."')
 
 
 # ── BUILD COMMAND ─────────────────────────────────────────────────────────
-def build_command(raw_cmd):
+def build_command(raw_cmd, activate=True):
     if IS_WIN:
         if CONDA_PATH:
             base_dir = os.path.dirname(os.path.dirname(CONDA_PATH))
@@ -158,6 +205,7 @@ def build_command(raw_cmd):
         home = os.path.expanduser("~")
         inits = []
         for base in [
+            PRIVATE_CONDA,
             os.path.join(home, "miniforge3"),
             os.path.join(home, "miniconda3"),
             os.path.join(home, "anaconda3"),
@@ -176,10 +224,11 @@ def build_command(raw_cmd):
                 inits.append(f'. "{rc2}" >/dev/null 2>&1')
         init_block = " ; ".join(inits) if inits else "true"
         # Fail loudly instead of silently running in (base) with tools missing
-        activate = (f'if ! conda activate {CONDA_ENV} 2>/dev/null; then '
-                    f'echo "[RNAflow] Could not activate conda env \'{CONDA_ENV}\'. '
-                    f'Run the Install Tools step first." >&2; exit 78; fi')
-        full = f'{init_block} ; {activate} ; {raw_cmd}'
+        activate_cmd = (f'if ! conda activate {CONDA_ENV} 2>/dev/null; then '
+                        f'echo "[RNAflow] Could not activate conda env \'{CONDA_ENV}\'. '
+                        f'Run the Install Tools step first." >&2; exit 78; fi')
+        full = (f'{init_block} ; {activate_cmd} ; {raw_cmd}' if activate
+                else f'{init_block} ; {raw_cmd}')
         shell = "/bin/zsh" if IS_MAC and os.path.exists("/bin/zsh") else "/bin/bash"
         return [shell, "-c", full]
 
@@ -204,10 +253,10 @@ def prune_jobs():
             jobs.pop(jid, None)
 
 
-def new_job(raw_cmd, lang, label):
+def new_job(raw_cmd, lang, label, setup=False):
     job_id = uuid.uuid4().hex[:12]
     job = {
-        "id": job_id, "cmd": raw_cmd, "lang": lang, "label": label,
+        "id": job_id, "cmd": raw_cmd, "lang": lang, "label": label, "setup": setup,
         "process": None, "status": "queued", "exit_code": None,
         "lines": [], "cond": threading.Condition(), "started": time.time(),
         "log_path": os.path.join(LOG_DIR, f"{job_id}.log"),
@@ -248,7 +297,8 @@ def materialise_r_script(job):
 def run_job(job):
     try:
         raw = materialise_r_script(job) if job["lang"] == "r" else job["cmd"]
-        args   = build_command(raw)
+        # Setup creates the env every other job activates
+        args   = build_command(raw, activate=not job.get("setup"))
         kwargs = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       text=True, bufsize=1, env=os.environ.copy())
         if not IS_WIN:
@@ -270,6 +320,9 @@ def run_job(job):
             finish(job, "killed", -1)
         else:
             finish(job, "done" if code == 0 else "error", code)
+        if job.get("setup"):
+            global ENV_CHECKED
+            ENV_CHECKED = 0.0   # re-check on the next /status
 
     except Exception as e:
         emit(job, f"[Server error] {e}\n")
@@ -429,15 +482,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
 
         if p == "/status":
-            global ENV_PRESENT
             if not self.host_ok():
                 self.reply(403, {"error": "bad_host"}); return
-            if ENV_PRESENT is None:
-                ENV_PRESENT = conda_env_exists()
             self.reply(200, {
                 "ok": True, "version": VERSION, "system": SYSTEM,
                 "conda": CONDA_PATH or "not found", "env": CONDA_ENV,
-                "env_present": ENV_PRESENT,
+                "env_present": env_present(),
                 "python": sys.version.split()[0],
                 # Lets the app write absolute paths into files that other
                 # tools read — Nextflow does not expand "~" inside a CSV field.
@@ -648,6 +698,32 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if err:
                 self.reply(400, {"error": "bad_scope", "detail": err}); return
             self.reply(200, {"ok": True, "root": real})
+            return
+
+        if p == "/setup":
+            if not self.guard():
+                return
+            length = int(self.headers.get("Content-Length", 0) or 0)
+            try:
+                payload = json.loads(self.rfile.read(min(length, 50_000)) or b"{}")
+            except Exception:
+                self.reply(400, {"error": "bad_json"}); return
+            if IS_WIN:
+                self.reply(400, {"error": "windows_needs_wsl",
+                                 "detail": "Bioconda tools do not run on Windows directly. "
+                                           "Run RNAflow inside WSL2 (Ubuntu)."}); return
+            if not CONDA_PATH:
+                self.reply(409, {"error": "no_conda",
+                                 "detail": "Conda was not found. The desktop app installs it "
+                                           "on first launch; otherwise install Miniforge."}); return
+            err = validate_env_yaml(payload.get("yaml"))
+            if err:
+                self.reply(400, {"error": "bad_env", "detail": err}); return
+            with open(ENV_FILE, "w") as fh:
+                fh.write(payload["yaml"].rstrip() + "\n")
+            job = new_job(setup_command(), "bash", "setup", setup=True)
+            threading.Thread(target=run_job, args=(job,), daemon=True).start()
+            self.reply(200, {"job_id": job["id"], "log": job["log_path"]})
             return
 
         if p != "/run":

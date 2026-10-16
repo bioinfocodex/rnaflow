@@ -1,0 +1,26 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 6: ALIGN                                           -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-align">
+  <div class="page-header">
+    <h1>6 — Alignment</h1>
+    <p>Map trimmed reads to the reference genome with HISAT2, streaming straight into sorted, indexed BAM files.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🎯</span> Align all samples — HISAT2 → sorted BAM</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-align">...</pre></div>
+      <div class="alert success"><span class="alert-icon">✅</span> <strong>Acceptable alignment rates:</strong> &gt;80% = OK &nbsp; &gt;90% = Good &nbsp; &gt;95% = Excellent. Low rate = check organism/genome match or strandedness setting.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📊</span> Check mapping rates</div>
+    <div class="card-body">
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-bam">...</pre></div>
+    </div>
+  </div>
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-align'); goTo('page-counts', document.getElementById('nav-counts'))">Mark done &amp; next →</button>
+  </div>
+</div>
+

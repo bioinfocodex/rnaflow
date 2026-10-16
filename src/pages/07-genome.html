@@ -1,0 +1,44 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 5: GENOME                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-genome">
+  <div class="page-header">
+    <h1>5 — Genome &amp; Index <span class="tag tag-purple" style="font-size:0.5em; vertical-align:middle;">Once per organism</span></h1>
+    <p>Download reference genome and annotation, then build the HISAT2 alignment index.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🗂️</span> Download genome + annotation</div>
+    <div class="card-body">
+      <div class="alert warning"><span class="alert-icon">⚠️</span> Only needed once per organism. Once downloaded, reuse for all future projects with the same species.</div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-genome">...</pre></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🏗️</span> Build HISAT2 index</div>
+    <div class="card-body">
+      <div class="alert info"><span class="alert-icon">⏱️</span> Build time: Yeast ~2 min · Worm/Fly ~5 min · Mouse/Human ~30–60 min. Build once, reuse forever.</div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-index">...</pre></div>
+      <div class="alert info" style="margin-top:4px;">
+        <span class="alert-icon">📌</span>
+        <div>Bundled URLs point at <strong>Ensembl <span id="rel-vert">116</span></strong> /
+        <strong>Ensembl Genomes <span id="rel-genomes">63</span></strong>, verified <span id="rel-checked">2026-08-24</span>.
+        Ensembl retires old releases, so if a download 404s, run the check below and grab the current link from the portals listed here —
+        both URL boxes on the Configure page are editable.</div>
+      </div>
+      <h3>Check your reference URLs before a long download</h3>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — verify both links resolve</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-check-urls">...</pre></div>
+      <h3>Reference genome portals by organism type</h3>
+      <table class="ref-table">
+        <tr><th>Organism group</th><th>Best source</th></tr>
+        <tr><td>Human, Mouse, Rat, Zebrafish, Fly, Worm, Yeast</td><td><code>https://www.ensembl.org</code> → FTP Download</td></tr>
+        <tr><td>Arabidopsis, Rice, Maize, Wheat, Soybean, Tomato</td><td><code>https://plants.ensembl.org</code> → FTP Download</td></tr>
+        <tr><td>Yarrowia lipolytica</td><td><code>https://www.ncbi.nlm.nih.gov/datasets/genome/</code></td></tr>
+        <tr><td>Any organism</td><td><code>https://www.ncbi.nlm.nih.gov/genome/</code> → Download FASTA + GTF</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-genome'); goTo('page-align', document.getElementById('nav-align'))">Mark done &amp; next →</button>
+  </div>
+</div>
+

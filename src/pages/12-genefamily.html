@@ -1,0 +1,227 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE: GENE FAMILY ANALYSIS                              -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-genefamily">
+  <div class="page-header">
+    <h1>🧬 Step 8 — Gene Family Analysis</h1>
+    <p>Select what to analyse — run the whole dataset, focus on one or more gene families, or both together. Each option produces separate R scripts and output files.</p>
+  </div>
+
+  <!-- ── STEP 1: WHAT TO ANALYSE ─────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-head" style="background:rgba(188,140,255,0.08);">
+      <span class="card-icon">☑️</span> Step 1 — What would you like to analyse?
+      <span style="margin-left:auto;font-size:0.75em;color:var(--text3);font-weight:400;">Tick one or both — independent selections</span>
+    </div>
+    <div class="card-body">
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+
+        <!-- Tile A: Whole analysis -->
+        <div class="gf-scope-tile active" id="gf-scope-whole" onclick="toggleScope('whole')">
+          <div class="gf-scope-check" id="gf-scope-check-whole">✓</div>
+          <div class="gf-scope-icon">🔬</div>
+          <div class="gf-scope-title">Whole RNA-seq Analysis</div>
+          <div class="gf-scope-desc">
+            Run DESeq2 on <strong>all genes</strong> in your count matrix.<br>
+            Produces: full volcano plot, heatmap of top 40 DE genes, PCA.
+            <div style="margin-top:8px;padding:6px 10px;background:rgba(63,185,80,0.07);border:1px solid rgba(63,185,80,0.15);border-radius:6px;font-size:0.85em;color:var(--green);">✓ Ticked by default — standard starting point</div>
+          </div>
+        </div>
+
+        <!-- Tile B: Gene family subset -->
+        <div class="gf-scope-tile" id="gf-scope-family" onclick="toggleScope('family')">
+          <div class="gf-scope-check" id="gf-scope-check-family"></div>
+          <div class="gf-scope-icon">🧬</div>
+          <div class="gf-scope-title">Gene Family Subset</div>
+          <div class="gf-scope-desc">
+            Filter results to <strong>specific gene families</strong> — transcription factors, kinases, hormone pathways, and 40+ more.<br>
+            <strong>Multi-select:</strong> choose as many categories and families as you want.
+            <div style="margin-top:8px;padding:6px 10px;background:rgba(188,140,255,0.07);border:1px solid rgba(188,140,255,0.2);border-radius:6px;font-size:0.85em;color:var(--purple);">Tick to reveal family selector below</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Hint row -->
+      <div class="alert info" id="gf-scope-hint">
+        <span class="alert-icon">💡</span>
+        <div id="gf-scope-hint-text">Whole analysis ticked. You can also tick Gene Family Subset to add focused analysis — both can run together and produce separate output files.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── STEP 2: FAMILY SELECTOR (only shown when Tile B ticked) ──────── -->
+  <div class="card" id="gf-family-selector" style="display:none;">
+    <div class="card-head" style="background:rgba(188,140,255,0.08);">
+      <span class="card-icon">🗂️</span> Step 2 — Select gene families
+      <span style="margin-left:auto;font-size:0.75em;font-weight:400;color:var(--purple);" id="gf-selected-count">0 families selected</span>
+    </div>
+    <div class="card-body">
+
+      <!-- Quick-select shortcuts -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;margin-bottom:16px;">
+        <span style="font-size:0.78em;color:var(--text3);font-weight:600;flex-shrink:0;">Quick select:</span>
+        <button class="btn btn-outline" style="font-size:0.73em;padding:3px 10px;" onclick="selectAllCats(true);selectAllFamilies(true)">✅ All families</button>
+        <button class="btn btn-outline" style="font-size:0.73em;padding:3px 10px;" onclick="selectCatGroup('plant')">🌱 All plant</button>
+        <button class="btn btn-outline" style="font-size:0.73em;padding:3px 10px;" onclick="selectCatGroup('animal')">🐾 All animal</button>
+        <button class="btn btn-outline" style="font-size:0.73em;padding:3px 10px;" onclick="selectCatGroup('yeast')">🍺 All yeast</button>
+        <button class="btn btn-outline" style="font-size:0.73em;padding:3px 10px;" onclick="selectCatGroup('universal')">🔬 Universal</button>
+        <button class="btn btn-outline" style="font-size:0.73em;padding:3px 10px;color:var(--red);border-color:var(--red);" onclick="selectAllCats(false);updateGFfamilyList()">✕ Clear all</button>
+      </div>
+
+      <!-- Category multi-select -->
+      <div style="margin-bottom:6px;font-size:0.72em;text-transform:uppercase;letter-spacing:0.6px;color:var(--text3);font-weight:600;">
+        ① Tick one or more categories — you can select from multiple at once
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="gf-cat-chips">
+        <label class="gf-cat-chip"><input type="checkbox" value="tf"               onchange="updateGFfamilyList()"> Transcription Factors</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="kinase"           onchange="updateGFfamilyList()"> Protein Kinases</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="phosphatase"      onchange="updateGFfamilyList()"> Phosphatases</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="transporter"      onchange="updateGFfamilyList()"> Transporters &amp; Channels</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="ubiquitin"        onchange="updateGFfamilyList()"> Ubiquitin / Proteasome</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="hsp"              onchange="updateGFfamilyList()"> Heat Shock Proteins</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="rrp"              onchange="updateGFfamilyList()"> RNA-binding Proteins</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="ribosomal"        onchange="updateGFfamilyList()"> Ribosomal Proteins</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="hormone_plant"    onchange="updateGFfamilyList()"> 🌱 Plant Hormones</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="defense_plant"    onchange="updateGFfamilyList()"> 🌱 Plant Defense</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="cellwall"         onchange="updateGFfamilyList()"> 🌱 Cell Wall</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="photosynthesis"   onchange="updateGFfamilyList()"> 🌱 Photosynthesis</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="metabolism_plant" onchange="updateGFfamilyList()"> 🌱 Plant Metabolism</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="flowering"        onchange="updateGFfamilyList()"> 🌱 Flowering / Circadian</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="immune"           onchange="updateGFfamilyList()"> 🐾 Immune System</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="signaling_animal" onchange="updateGFfamilyList()"> 🐾 Animal Signalling</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="apoptosis"        onchange="updateGFfamilyList()"> 🐾 Apoptosis</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="cancer"           onchange="updateGFfamilyList()"> 🐾 Cancer Genes</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="epigenetic"       onchange="updateGFfamilyList()"> 🐾 Epigenetic</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="gpcr"             onchange="updateGFfamilyList()"> 🐾 GPCRs</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="yeast_metabolism" onchange="updateGFfamilyList()"> 🍺 Yeast Metabolism</label>
+        <label class="gf-cat-chip"><input type="checkbox" value="yeast_stress"     onchange="updateGFfamilyList()"> 🍺 Yeast Stress</label>
+      </div>
+
+      <!-- Specific families multi-select -->
+      <div id="gf-specific-panel" style="display:none;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.6px;color:var(--text3);font-weight:600;">
+            ② Tick which specific families to include — multiple selections welcome
+          </div>
+          <div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0;">
+            <button class="btn btn-outline" style="font-size:0.72em;padding:2px 10px;" onclick="selectAllFamilies(true)">✅ All</button>
+            <button class="btn btn-outline" style="font-size:0.72em;padding:2px 10px;color:var(--red);border-color:var(--red);" onclick="selectAllFamilies(false)">✕ None</button>
+          </div>
+        </div>
+        <!-- Families grouped by category with a header per category -->
+        <div id="gf-specific-list" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        <!-- Counter bar -->
+        <div id="gf-fam-counter" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(63,185,80,0.07);border:1px solid rgba(63,185,80,0.2);border-radius:8px;font-size:0.8em;color:var(--green);"></div>
+      </div>
+
+      <!-- Custom gene list -->
+      <div style="margin-top:16px;padding:14px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;">
+        <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.6px;color:var(--text3);font-weight:600;margin-bottom:8px;">
+          ③ Custom gene list (optional) — add your own specific genes
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label style="font-size:0.78em;color:var(--text2);">Paste gene IDs — one per line or comma-separated</label>
+            <textarea id="gf-custom-genes" rows="4" placeholder="AT1G01010&#10;AT2G39730&#10;Os01g0100100&#10;..." oninput="updateGFsummary()" style="width:100%;margin-top:6px;padding:8px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--mono);font-size:0.8em;resize:vertical;"></textarea>
+          </div>
+          <div>
+            <label style="font-size:0.78em;color:var(--text2);">Custom list name (used in output files)</label>
+            <input id="gf-custom-name" type="text" placeholder="my_gene_list" oninput="updateGFsummary()" style="width:100%;margin-top:6px;padding:7px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--mono);font-size:0.82em;">
+            <div style="font-size:0.75em;color:var(--text3);margin-top:8px;line-height:1.5;">Combine with selected families above, or use alone. Accepts any gene ID matching your count matrix.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live selection summary -->
+      <div id="gf-selection-summary" style="display:none;margin-top:14px;padding:12px 14px;background:rgba(63,185,80,0.07);border:1px solid rgba(63,185,80,0.2);border-radius:9px;">
+        <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.6px;color:var(--green);font-weight:600;margin-bottom:6px;">✅ Selection summary</div>
+        <div id="gf-selection-text" style="font-size:0.83em;color:var(--text2);line-height:1.7;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── GENERATE BUTTON ───────────────────────────────────────────────── -->
+  <div id="gf-generate-row" style="margin:0 0 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <button class="btn btn-green" style="font-size:0.9em;padding:10px 24px;" onclick="generateGFcode()">⚡ Generate analysis code</button>
+    <span style="font-size:0.8em;color:var(--text3);" id="gf-generate-label">Whole analysis ready — click to generate R scripts</span>
+  </div>
+
+  <!-- ── GENERATED CODE CARDS ─────────────────────────────────────────── -->
+  <div id="gf-code-section" style="display:none;">
+
+    <div class="card" id="gf-whole-card" style="display:none;">
+      <div class="card-head" style="background:rgba(63,185,80,0.08);">
+        <span class="card-icon">🔬</span> Whole RNA-seq DESeq2 analysis — run in RStudio
+        <span style="margin-left:auto;font-size:0.75em;color:var(--text3);font-weight:400;">All genes · Volcano · Heatmap · PCA</span>
+      </div>
+      <div class="card-body">
+        <div class="alert info"><span class="alert-icon">💡</span><div>Standard full analysis — all genes in your count matrix. Run this first. Results saved to <code>results/deseq2_results_whole.csv</code>.</div></div>
+        <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — full DESeq2 + plots</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+        <pre class="code" id="gf-cmd-whole">...</pre></div>
+      </div>
+    </div>
+
+    <div class="card" id="gf-filter-card" style="display:none;">
+      <div class="card-head" style="background:rgba(188,140,255,0.08);">
+        <span class="card-icon">🧬</span> Step 1 — Filter count matrix to selected gene families
+        <span style="margin-left:auto;font-size:0.75em;color:var(--text3);font-weight:400;" id="gf-filter-card-label"></span>
+      </div>
+      <div class="card-body">
+        <div class="alert warning"><span class="alert-icon">⚠️</span><div>For large genomes (human, wheat, maize): also download curated gene lists from PlantTFDB / AnimalTFDB / KEGG for the most complete results. Pattern-based filtering below works well for most cases.</div></div>
+        <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — filter count matrix to selected families</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+        <pre class="code" id="gf-cmd-filter">...</pre></div>
+      </div>
+    </div>
+
+    <div class="card" id="gf-analysis-card" style="display:none;">
+      <div class="card-head" style="background:rgba(240,136,62,0.08);">
+        <span class="card-icon">📊</span> Step 2 — DESeq2 on filtered gene subset
+      </div>
+      <div class="card-body">
+        <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — DESeq2 on gene family subset</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+        <pre class="code" id="gf-cmd-analysis">...</pre></div>
+      </div>
+    </div>
+
+    <div class="card" id="gf-plots-card" style="display:none;">
+      <div class="card-head" style="background:rgba(88,166,255,0.08);">
+        <span class="card-icon">🌋</span> Step 3 — Volcano plot + heatmap for selected families
+      </div>
+      <div class="card-body">
+        <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — volcano + heatmap per family</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div>
+        <pre class="code" id="gf-cmd-plots">...</pre></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── DATABASE REFERENCE ────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🗂️</span> Gene family database reference</div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>Database</th><th>What it contains</th><th>URL</th><th>Best for</th></tr>
+        <tr><td>PlantTFDB</td><td>All plant TF families</td><td><code>planttfdb.gao-lab.org</code></td><td>Arabidopsis, rice, maize, wheat, soybean, tomato</td></tr>
+        <tr><td>iTAK</td><td>Plant TF + protein kinase</td><td><code>itak.bioinfotoolkits.net</code></td><td>All plant species</td></tr>
+        <tr><td>AnimalTFDB</td><td>Animal TF families</td><td><code>animaltfdb.bioinfotoolkits.net</code></td><td>Human, mouse, rat, zebrafish</td></tr>
+        <tr><td>KEGG Pathway</td><td>Metabolic &amp; signalling pathways</td><td><code>kegg.jp</code></td><td>All organisms</td></tr>
+        <tr><td>Pfam / InterPro</td><td>Protein domain families</td><td><code>ebi.ac.uk/interpro</code></td><td>Any organism</td></tr>
+        <tr><td>PANTHER</td><td>Protein families + subfamilies</td><td><code>pantherdb.org</code></td><td>Human, mouse, Drosophila, worm</td></tr>
+        <tr><td>Ensembl BioMart</td><td>Gene family / Pfam filtering</td><td><code>ensembl.org/biomart</code></td><td>All Ensembl organisms</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Done button -->
+  <div style="margin:8px 0 20px;display:flex;gap:10px;align-items:center;">
+    <button class="btn btn-ghost" onclick="markDone('nav-genefamily'); goTo('page-deseq2', document.getElementById('nav-deseq2'))">Mark done &amp; next → DESeq2 in R</button>
+    <span style="font-size:0.8em;color:var(--text3);">Step 8 of 10</span>
+  </div>
+
+</div>
+
+

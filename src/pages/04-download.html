@@ -1,0 +1,30 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 2: DOWNLOAD                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-download">
+  <div class="page-header">
+    <h1>2 — Download Raw Data <span class="tag tag-green" style="font-size:0.5em; vertical-align:middle;">Every new project</span></h1>
+    <p>Create project folder on your computer and download RNA-seq reads from NCBI SRA.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📂</span> Session startup + create project folder</div>
+    <div class="card-body">
+      <div class="alert info"><span class="alert-icon">💡</span> Run these two commands every time you open a new Terminal session.</div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-session">...</pre></div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash — create folders (run once)</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-mkdir">...</pre></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">⬇️</span> Download samples from NCBI SRA</div>
+    <div class="card-body">
+      <div class="alert info"><span class="alert-icon">⏱️</span> Each sample takes 3–10 minutes. Run one at a time and wait for the progress bar to complete.</div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-download">...</pre></div>
+      <h3>Verify downloads:</h3>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">bash</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-check-dl">...</pre></div>
+    </div>
+  </div>
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-download'); goTo('page-qc', document.getElementById('nav-qc'))">Mark done &amp; next →</button>
+  </div>
+</div>
+

@@ -9,10 +9,11 @@ const path  = require('path');
 const fs    = require('fs');
 const http  = require('http');
 const { spawn, exec } = require('child_process');
+const bootstrap = require('./bootstrap');
 
 // ── CONFIG ──────────────────────────────────────────────────────────────
 const APP_NAME    = 'RNAflow';
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.2.0';
 const SERVER_PORT = 7788;
 const SERVER_HOST = '127.0.0.1';
 
@@ -35,23 +36,9 @@ app.on('second-instance', () => {
   if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
 });
 
-// ── FIND PYTHON ─────────────────────────────────────────────────────────
-function findPython() {
-  const candidates = process.platform === 'win32'
-    ? ['python', 'python3', 'py']
-    : ['python3', 'python'];
-  for (const cmd of candidates) {
-    try {
-      require('child_process').execSync(`${cmd} --version`, { stdio: 'ignore' });
-      return cmd;
-    } catch (_) {}
-  }
-  return null;
-}
-
 // ── START LOCAL SERVER ───────────────────────────────────────────────────
 function startServer() {
-  const python     = findPython();
+  const python     = bootstrap.findPython();
   // In packaged app, extraResources land in process.resourcesPath
   // In dev (electron .), __dirname works fine
   const serverPath = app.isPackaged
@@ -63,10 +50,14 @@ function startServer() {
       type: 'warning',
       title: 'Python not found',
       message: 'Python 3 is required for Run mode.',
-      detail: 'Install Python from python.org or via Miniforge/Anaconda.\nThe app will work in Copy mode without Python.',
-      buttons: ['Download Python', 'Continue anyway'],
+      detail: process.platform === 'win32'
+        ? 'On Windows, RNAflow runs its tools inside WSL2 (Ubuntu). The app works in Copy mode meanwhile.'
+        : 'Install Miniforge, or restart RNAflow to let it install everything for you.\nThe app works in Copy mode meanwhile.',
+      buttons: ['Show me how', 'Continue anyway'],
     }).then(({ response }) => {
-      if (response === 0) shell.openExternal('https://github.com/conda-forge/miniforge/releases');
+      if (response === 0) shell.openExternal(process.platform === 'win32'
+        ? 'https://learn.microsoft.com/windows/wsl/install'
+        : 'https://github.com/conda-forge/miniforge/releases');
     });
     return;
   }
@@ -125,6 +116,71 @@ function stopServer() {
   }
 }
 
+// ── FIRST-LAUNCH SETUP ──────────────────────────────────────────────────
+// A plain page shown while Miniforge installs; status() updates it.
+const SETUP_PAGE = 'data:text/html;charset=utf-8,' + encodeURIComponent(`<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  body { margin:0; height:100vh; display:grid; place-items:center; background:#03080f;
+         color:#e6edf3; font:15px/1.5 -apple-system, system-ui, sans-serif; }
+  .box { width:440px; text-align:center; }
+  h1 { font-size:22px; font-weight:600; margin:0 0 6px; }
+  p { color:#8b949e; margin:0 0 22px; }
+  .bar { height:6px; background:#161b22; border-radius:3px; overflow:hidden; }
+  .bar i { display:block; height:100%; width:0; background:#3fb950; transition:width .3s; }
+  #msg { margin-top:12px; color:#c9d1d9; min-height:1.5em; }
+</style></head><body><div class="box">
+  <h1>Setting up RNAflow</h1>
+  <p>One-time install of conda and the analysis tools. Nothing outside ~/.rnaflow is changed.</p>
+  <div class="bar"><i id="bar"></i></div><div id="msg">Starting…</div>
+</div></body></html>`);
+
+function setupStatus(text, fraction) {
+  if (!mainWindow) return;
+  if (fraction != null) mainWindow.setProgressBar(fraction);
+  mainWindow.webContents.executeJavaScript(
+    `document.getElementById('msg').textContent = ${JSON.stringify(text)};` +
+    (fraction != null ? `document.getElementById('bar').style.width = '${Math.round(fraction * 100)}%';` : '')
+  ).catch(() => {});
+}
+
+// 'present' when conda was already there, 'installed' when it was just
+// installed (the user agreed to the tools too), 'skipped' otherwise
+async function firstLaunchSetup() {
+  if (!bootstrap.needsBootstrap()) return 'present';
+  // No parent window: it is not shown yet, and a sheet on a hidden window
+  // never appears on macOS
+  const { response } = await dialog.showMessageBox({
+    type: 'question',
+    title: 'Install the analysis tools?',
+    message: 'RNAflow needs conda and its RNA-seq tools to run analyses.',
+    detail: 'It can install them for you now: about 400 MB in total, usually 5–15 minutes. ' +
+            'Everything goes into ~/.rnaflow, needs no administrator password, and does not ' +
+            'change your shell settings. You can still browse and copy commands without it.',
+    buttons: ['Install', 'Not now'],
+    defaultId: 0, cancelId: 1,
+  });
+  if (response !== 0) return 'skipped';
+
+  await mainWindow.loadURL(SETUP_PAGE);
+  mainWindow.show();
+  try {
+    await bootstrap.installMiniforge(bootstrap.PRIVATE_CONDA, setupStatus);
+    setupStatus('Conda is ready. Opening RNAflow to install the RNA-seq tools…', 1);
+    mainWindow.setProgressBar(-1);
+    return 'installed';
+  } catch (err) {
+    mainWindow.setProgressBar(-1);
+    await dialog.showMessageBox(mainWindow, {
+      type: 'error', title: 'Setup did not finish',
+      message: 'RNAflow could not install conda.',
+      detail: `${err.message}\n\nCheck your internet connection and restart RNAflow to try again. ` +
+              'The app still works in Copy mode.',
+      buttons: ['OK'],
+    });
+    return 'skipped';
+  }
+}
+
 // ── CREATE WINDOW ────────────────────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -147,10 +203,16 @@ function createWindow() {
 
   // v3: start the server first, then load the page it serves — that page
   // arrives with the access token already injected, so Run works immediately.
-  startServer();
-  waitForServer(8000).then(up => {
+  // On a machine with no conda, first install it; the page then opens with
+  // setup=1 and installs the pinned tools through the server by itself.
+  firstLaunchSetup().then(setup => {
+    startServer();
+    return waitForServer(8000).then(up => ({ up, setup }));
+  }).then(({ up, setup }) => {
     if (up) {
-      mainWindow.loadURL(APP_URL);
+      // Only a user who just agreed to the install gets it started for them;
+      // everyone else sees a prompt if the tools are missing
+      mainWindow.loadURL(APP_URL + (setup === 'installed' ? '&setup=1' : ''));
     } else {
       // Server could not start (no Python?) — fall back to the local file.
       // Copy mode still works; Run mode will ask for a token.

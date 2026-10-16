@@ -1,0 +1,51 @@
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PAGE 8: DESEQ2                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-deseq2">
+  <div class="page-header">
+    <h1>8 — DESeq2 Analysis <span class="tag tag-orange" style="font-size:0.5em; vertical-align:middle;">Run in RStudio</span></h1>
+    <p>Statistical differential expression testing. Finds which genes significantly change between your conditions.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📊</span> Complete DESeq2 script</div>
+    <div class="card-body">
+      <div class="alert danger"><span class="alert-icon">⚠️</span> <strong>Requirement:</strong> Minimum 2 biological replicates per condition. 3+ replicates strongly recommended for reliable statistical results.</div>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R — paste entire block into RStudio console</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-deseq2">...</pre></div>
+      <h3>Understanding the output columns</h3>
+      <table class="ref-table">
+        <tr><th>Column</th><th>What it means</th><th>How to use</th></tr>
+        <tr><td><code>log2FoldChange</code></td><td>Fold change in log2 scale. Positive = higher in treatment.</td><td>Direction of change</td></tr>
+        <tr><td><code>padj</code></td><td>Adjusted p-value after multiple testing correction</td><td>Always use this, never raw pvalue</td></tr>
+        <tr><td><code>baseMean</code></td><td>Average expression level across all samples</td><td>Filter very lowly expressed genes</td></tr>
+      </table>
+      <h3>Filter significant genes:</h3>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code"><span class="cc"># Standard: significant genes (padj < 0.05)</span>
+sig &lt;- res_df[res_df$padj &lt; <span class="cn">0.05</span> &amp; !<span class="cf">is.na</span>(res_df$padj), ]
+
+<span class="cc"># Strict: significant AND at least 2-fold change</span>
+sig_strict &lt;- res_df[res_df$padj &lt; <span class="cn">0.05</span> &amp; <span class="cf">abs</span>(res_df$log2FoldChange) &gt; <span class="cn">1</span> &amp; !<span class="cf">is.na</span>(res_df$padj), ]
+
+<span class="cc"># Top 20 most significant</span>
+top20 &lt;- <span class="cf">head</span>(sig[<span class="cf">order</span>(sig$padj), ], <span class="cn">20</span>)
+<span class="cf">print</span>(top20[, <span class="cf">c</span>(<span class="cs">"gene"</span>, <span class="cs">"log2FoldChange"</span>, <span class="cs">"padj"</span>)])</pre></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">⚖️</span> Check with edgeR and limma-voom</div>
+    <div class="card-body">
+      <p>DESeq2, edgeR and limma-voom model counts differently. Genes that all three call significant are the most robust; a gene only one method calls deserves a second look. This runs both on exactly the samples, filtering and design DESeq2 used, then compares them in a table and a Venn diagram. Run it after the DESeq2 step.</p>
+      <div class="code-block"><div class="code-toolbar"><span class="code-lang">R</span><div class="code-toolbar-spacer"></div><button class="copy-btn" onclick="copyBlock(this)">Copy</button></div><pre class="code" id="cmd-consensus">...</pre></div>
+      <table class="ref-table" style="margin-top:10px;">
+        <tr><th>Output</th><th>What it holds</th></tr>
+        <tr><td><code>results/edgeR_results.csv</code></td><td>edgeR quasi-likelihood test, TMM-normalised</td></tr>
+        <tr><td><code>results/limma_voom_results.csv</code></td><td>limma-voom with sample quality weights</td></tr>
+        <tr><td><code>results/method_comparison.csv</code></td><td>Every gene with all three results and <code>n_methods</code> — how many call it significant</td></tr>
+        <tr><td><code>results/method_venn.png</code></td><td>Overlap of the three significant gene lists</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="step-nav">
+    <button class="btn btn-ghost" onclick="markDone('nav-deseq2'); goTo('page-plots', document.getElementById('nav-plots'))">Mark done &amp; next →</button>
+  </div>
+</div>
+
