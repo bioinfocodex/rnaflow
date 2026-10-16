@@ -1,0 +1,48 @@
+name: Tests
+
+# Every push and pull request: the shipped app must match its source, the
+# copies in files/ and website/ must match the canonical files, and the
+# command generator and server must pass their tests.
+#
+# macOS as well as Linux because Mac users get BSD sed and awk, which have
+# broken generated commands before (\t in sed replacements, slow awk).
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: RNAflow_App.html is built from src/
+        run: node tools/build.mjs --check
+
+      - name: files/ and website/ copies are in sync
+        run: ./sync.sh --check
+
+      - name: App tests (command generator, explorer)
+        working-directory: tests
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+
+      - name: Server tests
+        run: python -m unittest discover tests -v

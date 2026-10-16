@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - 'v*'           # triggers on: git tag v1.0.0 && git push --tags
+  # Build the installers without publishing anything: Actions → Build & Release
+  # → Run workflow. The files appear as artifacts of that run; no release is
+  # created, so the website's download links are unaffected.
+  workflow_dispatch:
 
 permissions:
   contents: write     # needed to create GitHub Releases
@@ -99,6 +103,8 @@ jobs:
   # ── Create GitHub Release & attach all files ──────────────────────────────
   release:
     needs: [build-mac, build-win, build-linux]
+    # Only a pushed version tag publishes a release
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -133,9 +139,9 @@ jobs:
             | Linux | `rnaflow-*.rpm` | Fedora/RHEL |
 
             ### Requirements
-            - Python 3.8+
-            - Miniforge / Miniconda / Anaconda
-            - `rnaseq` conda environment (set up inside the app)
+            - macOS or Linux; on Windows the analysis tools run in WSL2
+            - Nothing else: on first launch RNAflow offers to install conda and the
+              pinned analysis tools into `~/.rnaflow` (about 400 MB, no admin password)
 
             ### What's New
             See [CHANGELOG](https://github.com/bioinfocodex/rnaflow/blob/main/CHANGELOG.md) for details.
