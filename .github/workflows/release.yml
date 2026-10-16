@@ -84,7 +84,7 @@ jobs:
         working-directory: files
         run: npm install
 
-      - name: Build Linux (AppImage + deb + rpm)
+      - name: Build Linux (AppImage + deb)
         working-directory: files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -97,7 +97,6 @@ jobs:
           path: |
             files/dist/*.AppImage
             files/dist/*.deb
-            files/dist/*.rpm
           if-no-files-found: error
 
   # ── Create GitHub Release & attach all files ──────────────────────────────
@@ -136,7 +135,6 @@ jobs:
             | Windows | `RNAflow-*.exe` (portable) | No install needed |
             | Linux | `RNAflow-*.AppImage` | Universal |
             | Linux | `rnaflow_*_amd64.deb` | Ubuntu/Debian |
-            | Linux | `rnaflow-*.rpm` | Fedora/RHEL |
 
             ### Requirements
             - macOS or Linux; on Windows the analysis tools run in WSL2
