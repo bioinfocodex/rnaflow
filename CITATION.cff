@@ -7,6 +7,14 @@ authors:
     orcid: "https://orcid.org/0000-0003-2627-6251"
     affiliation: "Independent researcher, BioInfoCodex"
 version: 3.2.1
+doi: 10.5281/zenodo.23424916
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23424916
+    description: "Zenodo concept DOI, resolving to the latest archived version"
+  - type: doi
+    value: 10.5281/zenodo.23424917
+    description: "Zenodo DOI of version 3.2.1"
 license: MIT
 repository-code: "https://github.com/bioinfocodex/rnaflow"
 url: "https://bioinfocodex.com"

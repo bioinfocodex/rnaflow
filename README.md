@@ -1,5 +1,7 @@
 # RNAflow
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23424916.svg)](https://doi.org/10.5281/zenodo.23424916)
+
 A guided desktop app for bulk RNA-seq analysis, from raw FASTQ files to
 differential expression and pathway enrichment, running entirely on your own
 computer.
@@ -96,6 +98,13 @@ output looks like.
 Bug reports and pull requests are welcome; see
 [CONTRIBUTING.md](CONTRIBUTING.md). The app is built from `src/`
 ([`src/README.md`](src/README.md)), and tests run on every push.
+
+## Citing RNAflow
+
+Cite the archived software through its Zenodo DOI,
+[10.5281/zenodo.23424916](https://doi.org/10.5281/zenodo.23424916), which
+always resolves to the latest version. Each release also has its own DOI on
+Zenodo. GitHub's "Cite this repository" button gives the same reference.
 
 ## Licence
 
