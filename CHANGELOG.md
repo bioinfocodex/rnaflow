@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.2.1 — 2026-10-16
+
+No changes to the app or its results. This release exists so that Zenodo
+archives RNAflow and assigns it a DOI: the repository now carries
+`.zenodo.json` metadata (title, creator with ORCID, MIT licence, keywords),
+and Zenodo only archives releases published after it is enabled.
+
 ## v3.2.0 — 2026-10-16
 
 ### Reproducibility

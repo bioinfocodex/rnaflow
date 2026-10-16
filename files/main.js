@@ -13,7 +13,7 @@ const bootstrap = require('./bootstrap');
 
 // ── CONFIG ──────────────────────────────────────────────────────────────
 const APP_NAME    = 'RNAflow';
-const APP_VERSION = '3.2.0';
+const APP_VERSION = '3.2.1';
 const SERVER_PORT = 7788;
 const SERVER_HOST = '127.0.0.1';
 
