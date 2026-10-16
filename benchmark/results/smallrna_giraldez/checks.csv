@@ -1,0 +1,7 @@
+"check","result","value","threshold","what"
+"detected","PASS","258 / 285",">= 90%","Human miRNAs in the pools that RNAflow quantified and tested"
+"lfc_vs_truth","PASS","0.991",">= 0.90","log2 fold change vs designed log2 fold change, Pearson"
+"recall","PASS","0.99",">= 0.80","Designed changes of 2-fold or more called (padj < 0.05, right direction)"
+"false_positives","PASS","0.03","<= 0.10","Unchanged miRNAs (designed 1:1, n = 33) called significant"
+"direction","PASS","1",">= 0.95","Significant calls with the designed direction"
+"vs_authors","PASS","recall 0.990 vs 0.972; r 0.991 vs 0.978","within 0.05","Recall and correlation within 0.05 of DESeq2 on the authors' counts"

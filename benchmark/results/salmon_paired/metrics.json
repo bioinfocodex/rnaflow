@@ -1,0 +1,152 @@
+{
+  "checks": {
+    "gene_ids_unversioned": {
+      "label": "Result gene IDs carry no version suffix (needed for org.Hs.eg.db / GSEA mapping)",
+      "value": 0,
+      "threshold": "< 1% versioned",
+      "pass": true
+    },
+    "mapping_rate": {
+      "label": "Salmon mapping rate, lowest sample (%)",
+      "value": 95.5,
+      "threshold": ">= 70",
+      "pass": true
+    },
+    "count_spearman": {
+      "label": "Gene-count Spearman vs published airway, lowest sample",
+      "value": 0.923,
+      "threshold": ">= 0.85",
+      "pass": true
+    },
+    "count_logcpm_pearson": {
+      "label": "log2 CPM Pearson vs published airway, lowest sample",
+      "value": 0.917,
+      "threshold": ">= 0.90",
+      "pass": true
+    },
+    "code_equivalence": {
+      "label": "Max |log2FC| difference, RNAflow script vs reference script",
+      "value": 4.09e-14,
+      "threshold": "< 1e-6, same genes",
+      "pass": true
+    },
+    "de_recall": {
+      "label": "Recall of reference DE genes (padj<0.05, |LFC|>1), relative to depth-matched ceiling",
+      "value": 0.793,
+      "threshold": ">= 0.80 (RNAflow 0.47, ceiling 0.60)",
+      "pass": false
+    },
+    "de_precision": {
+      "label": "RNAflow DE genes also significant in the reference",
+      "value": 0.963,
+      "threshold": ">= 0.90",
+      "pass": true
+    },
+    "lfc_agreement": {
+      "label": "log2FC Pearson on reference DE genes",
+      "value": 0.956,
+      "threshold": ">= 0.90",
+      "pass": true
+    },
+    "known_targets": {
+      "label": "Known dex-induced genes recovered as up and significant",
+      "value": "7 / 7",
+      "threshold": "7 / 7",
+      "pass": true
+    },
+    "gsea_id_mapping": {
+      "label": "Result gene IDs found in org.Hs.eg.db as keyType \"ENSEMBL\" (the GSEA page's setting)",
+      "value": 0.854,
+      "threshold": ">= 0.60",
+      "pass": true
+    },
+    "lfc_shrinkage": {
+      "label": "Low-count genes (baseMean < 10) with |log2FC| > 5, unshrunk -> shrunk",
+      "value": "13 -> 1",
+      "threshold": "fewer after shrinkage",
+      "pass": true
+    },
+    "method_agreement": {
+      "label": "DESeq2 genes also called by edgeR and by limma-voom, lower of the two",
+      "value": 0.868,
+      "threshold": ">= 0.80",
+      "pass": true
+    },
+    "known_targets_all_methods": {
+      "label": "Known dex-induced genes called by all three methods",
+      "value": "7 / 7",
+      "threshold": "7 / 7",
+      "pass": true
+    },
+    "fgsea_hallmark": {
+      "label": "Hallmark sets tested; adipogenesis and androgen response activated (padj < 0.05)",
+      "value": "50 sets, 2 / 2",
+      "threshold": "50 sets, 2 / 2",
+      "pass": true
+    }
+  },
+  "context": {
+    "reads_per_sample": {
+      "SRR1039508": 3565890,
+      "SRR1039512": 3522938,
+      "SRR1039516": 3465528,
+      "SRR1039520": 3494990,
+      "SRR1039509": 3537299,
+      "SRR1039513": 3533031,
+      "SRR1039517": 3488691,
+      "SRR1039521": 3523901
+    },
+    "mapping_rate": {
+      "SRR1039508": 95.7485475332987,
+      "SRR1039512": 96.2579356174776,
+      "SRR1039516": 95.9393059248151,
+      "SRR1039520": 96.1876561366247,
+      "SRR1039509": 95.5298606270787,
+      "SRR1039513": 96.7479179671442,
+      "SRR1039517": 96.1855477473761,
+      "SRR1039521": 96.541514590255
+    },
+    "rnaflow_sig_padj05": 1296,
+    "rnaflow_design": "~ pair + condition",
+    "reference_sig_padj05_same_design": 4030,
+    "reference_sig_padj05_paired_design": 4030,
+    "reference_truth_set": 999,
+    "known_targets": [
+      {
+        "log2FoldChange": 2.99978323048075,
+        "padj": 1.10961860679129e-74,
+        "_row": "ENSG00000120129"
+      },
+      {
+        "log2FoldChange": 4.60788825652946,
+        "padj": 7.52286659057224e-21,
+        "_row": "ENSG00000163884"
+      },
+      {
+        "log2FoldChange": 3.19346017997319,
+        "padj": 2.35869717079265e-17,
+        "_row": "ENSG00000179094"
+      },
+      {
+        "log2FoldChange": 3.20886363775155,
+        "padj": 2.20667006689994e-21,
+        "_row": "ENSG00000157514"
+      },
+      {
+        "log2FoldChange": 3.73670649452809,
+        "padj": 2.40178776775039e-42,
+        "_row": "ENSG00000096060"
+      },
+      {
+        "log2FoldChange": 6.89644346253557,
+        "padj": 6.62663727303076e-33,
+        "_row": "ENSG00000109906"
+      },
+      {
+        "log2FoldChange": 2.69079186728238,
+        "padj": 4.96955276135971e-32,
+        "_row": "ENSG00000103196"
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "rnaflow-benchmark",
+  "private": true,
+  "type": "module",
+  "description": "Extracts RNAflow's generated commands for the airway benchmark",
+  "dependencies": {
+    "jsdom": "26.1.0"
+  }
+}
